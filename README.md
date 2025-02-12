@@ -1,97 +1,126 @@
 # Gemini 2.0 Realtime API Demo
 
-This project showcases integration with Google's Gemini AI models using the `@google/generative-ai` library. 
+## Overview
+This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library. It's built with Angular and showcases real-time AI capabilities in a web application.
 
-Key features include:
+## Core Features
+- Real-time streaming voice responses from Gemini 2.0 API
+- Natural language text generation
+- Interactive chat functionality
+- Google Search integration for current information
+- Secure Python code execution in sandbox
+- Automated function calling for API integration
 
-*   **Streaming:** Real-time responses from the Gemini 2.0 API via stream
-*   **Text Generation:** Natural language responses from the model
-*   **Chat:** Interactive conversational capabilities
-*   **Search:** Integration with Google Search for up-to-date information
-*   **Code Execution:** Python code execution in a sandboxed environment
-*   **Function Calling:** API integration and automation through defined functions
+## Setup Instructions
 
-## Prerequisites
+### System Requirements
+- Node.js and npm (latest stable version)
+- Angular CLI (globally installed via `npm install -g @angular/cli`)
+- Google AI API key from [Google AI Studio](https://makersuite.google.com/)
 
-Before running the application, ensure you have the following:
+### Installation Steps
 
-*   **Angular CLI:**  Make sure you have Angular CLI installed globally (`npm install -g @angular/cli`).
-*   **Node.js and npm:**  Ensure Node.js and npm are installed on your system.
-*   **Google AI API Key:** Obtain an API key from [Google AI Studio](https://makersuite.google.com/) and set it in the `environment.ts` file.
+1. **Set Up Environment Variables**
+   ```bash
+   ng g environments
+   ```
+   Create `environment.development.ts` in `src/environments/` with:
+   ```typescript
+   export const environment = {
+     API_KEY: 'YOUR_GOOGLE_AI_API_KEY',
+   };
+   ```
 
-## Configuration
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-1.  **Environment Variables:**
-    *   Run the command `ng g environments` to create a file named `environment.development.ts` in the `src/environments/` directory.
-    *   Add your Google AI API key to the `environment.development.ts` file:
+## Usage Guide
 
-    ```typescript
-    export const environment = {
-      API_KEY: 'YOUR_GOOGLE_AI_API_KEY',
-    };
-    ```
+### Getting Started
+1. Launch the application and click the `Connect` button under `Connection Status`
+2. The demo uses Gemini 2.0 LIVE API which requires a WebSocket connection
+3. Monitor the browser's Developer Tools Console for connection issues
+4. Before diving into development, explore Gemini 2.0's realtime capabilities (voice interactions, webcam, and screen sharing) using [Google AI Studio Live](https://aistudio.google.com/live). This interactive playground will help you understand the available features and integration options before implementing them in your project.
 
-2.  **Install Dependencies:**
+### Feature Testing Examples
+Test the various capabilities using these example prompts:
 
-    Run `npm install` to install the necessary dependencies, including `@google/generative-ai` and other required packages.
+1. **Google Search Integration**
+   - "Tell me the scores for the last 3 games of FC Barcelona."
 
+2. **Code Execution**
+   - "What's the 50th prime number?"
+   - "What's the square root of 342.12?"
 
-## Gemini2LiveAngular
+3. **Function Calling**
+   - "What's the weather in London?" (Note: Currently returns mock data of 25 degrees)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.6.
+### Configuration Options
 
-## Development server
+The main configuration is handled in `src/app.component`. You can toggle between audio and text modalities:
 
-To start a local development server, run:
+```typescript
+let config: LiveConfig = {
+  model: "models/gemini-2.0-flash-exp",
+  generationConfig: {
+    // For text responses in chat window
+    responseModalities: "text",
+    
+    // For audio responses (uncomment to enable)
+    // responseModalities: "audio",
+    // speechConfig: {
+    //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+    // },
+  },
+}
+```
 
+### Usage Limits
+- Daily and session-based limits apply
+- Token count restrictions to prevent abuse
+- If limits are exceeded, wait until the next day to resume
+
+## Development Guide
+
+### Local Development
+Start the development server:
 ```bash
 ng serve
 ```
+Access the application at `http://localhost:4200/`
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Available Commands
 
-## Code scaffolding
+1. **Generate New Components**
+   ```bash
+   ng generate component component-name
+   ```
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+2. **Build Project**
+   ```bash
+   ng build
+   ```
+   Build artifacts will be stored in the `dist/` directory
 
-```bash
-ng generate component component-name
-```
+3. **Run Tests**
+   - Unit Tests:
+     ```bash
+     ng test
+     ```
+   - E2E Tests:
+     ```bash
+     ng e2e
+     ```
+     Note: Select and install your preferred E2E testing framework
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Project Information
+- Built with Angular CLI version 19.1.6
+- Features automatic reload during development
+- Includes production build optimizations
 
 ## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Angular CLI Documentation](https://angular.dev/tools/cli)
+- [Google AI Studio](https://makersuite.google.com/)
+- Browser Developer Tools for debugging

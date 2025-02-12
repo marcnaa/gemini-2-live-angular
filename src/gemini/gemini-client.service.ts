@@ -7,6 +7,11 @@ import {
 import { Interrupted, LiveConfig, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
 import { environment } from '../../src/environments/environment.development';
 
+import { AudioStreamer } from './audio-streamer'; 
+import VolMeterWorket from './worklet.vol-meter'; 
+import { audioContext } from './utils'; 
+
+
 type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
 type ToolCallNullable = ToolCall | null;
 
@@ -24,7 +29,9 @@ export class MultimodalLiveService implements OnDestroy {
   public config: LiveConfig = {
     model: "models/gemini-2.0-flash-exp",
   };
-
+  private audioStreamer: AudioStreamer | null = null;
+  private volumeSubject = new BehaviorSubject<number>(0);
+  volume$ = this.volumeSubject.asObservable();
   private destroy$ = new Subject<void>(); // For unsubscribing
 
   constructor() {
@@ -33,6 +40,7 @@ export class MultimodalLiveService implements OnDestroy {
       apiKey: environment.API_KEY,
     };
     this.wsClient = new MultimodalLiveClient(connectionParams);
+    this.initializeAudioStreamer();
     this.setupEventListeners();
   }
 
@@ -40,6 +48,23 @@ export class MultimodalLiveService implements OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.disconnect(); // Ensure disconnection on service destruction
+  }
+
+  private async initializeAudioStreamer(): Promise<void> {
+    try {
+      const audioCtx = await audioContext({ id: 'audio-out' });
+      this.audioStreamer = new AudioStreamer(audioCtx);
+      await this.audioStreamer.addWorklet<any>(
+        'vumeter-out',
+        VolMeterWorket,
+        (ev: any) => {
+          this.volumeSubject.next(ev.data.volume);
+        },
+      );
+    } catch (error) {
+      console.error('Error initializing audio streamer:', error);
+      // Handle error appropriately (e.g., disable audio features)
+    }
   }
 
   private setupEventListeners(): void {
@@ -64,8 +89,28 @@ export class MultimodalLiveService implements OnDestroy {
         console.log('WS connection closed', e);
         this.setConnected(false);
       });
+    
+    // audio event listeners
+    this.wsClient
+      .on('interrupted', () => {
+      this.stopAudioStreamer() })
+      .on('audio', (data: ArrayBuffer) => {
+      this.addAudioData(data);
+    });
   }
 
+  private stopAudioStreamer(): void {
+    if (this.audioStreamer) {
+      this.audioStreamer.stop();
+    }
+  }
+
+  private addAudioData(data: ArrayBuffer): void {
+    if (this.audioStreamer) {
+      this.audioStreamer.addPCM16(new Uint8Array(data));
+    }
+  }
+  
   async connect(config: LiveConfig): Promise<void> {
     if (!config) {
       throw new Error('Config has not been set');
@@ -83,6 +128,7 @@ export class MultimodalLiveService implements OnDestroy {
 
   disconnect(): void {
     this.wsClient.disconnect();
+    this.stopAudioStreamer(); // Stop audio on disconnect
     this.setConnected(false);
   }
 

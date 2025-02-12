@@ -144,6 +144,10 @@ export class AppComponent implements OnInit, OnDestroy {
       model: "models/gemini-2.0-flash-exp",
       generationConfig: {
         responseModalities: "text",
+        // responseModalities: "audio", // note "audio" doesn't send a text response over
+        // speechConfig: {
+        //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+        // },
       },
       systemInstruction: {
         parts: [
