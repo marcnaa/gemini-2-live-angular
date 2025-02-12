@@ -2,9 +2,9 @@
 
 ## Why should I care?
 
-Gemini Live enables a new generation of dynamic, multimodal AI real-time experiences.
+Gemini Live API enables a new generation of dynamic, multimodal AI real-time experiences.
 
-### What's Possible with Gemini Live?
+### Gemini Live (available on Pixel 9)
 Gemini Live powers innovative applications across devices and platforms:
 
 - **Hands-free AI Assistance**: Users interact naturally through voice while cooking, driving, or multitasking
@@ -12,8 +12,17 @@ Gemini Live powers innovative applications across devices and platforms:
 - **Smart Home Automation**: Control your environment with natural voice commands - from adjusting lights to managing thermostats
 - **Seamless Shopping**: Browse products, compare options, and complete purchases through conversation
 - **Live Problem Solving**: Share your screen to get real-time guidance, troubleshooting, or explanations
+- **Integration with Google services**: leverage existing Google services like Search or Maps to enhance its capabilities
 
 [![Gemini Live on Pixel 9](https://img.youtube.com/vi/mNTGbi5ReMc/0.jpg)](https://www.youtube.com/watch?v=mNTGbi5ReMc)
+
+### Project Astra
+
+Project Astra is a research initiative aimed at developing a universal AI assistant with advanced capabilities. It's designed to process multimodal information, including text, speech, images, and video, allowing for a more comprehensive understanding of user needs and context.
+
+![Project Astra](https://imgur.com/VEPikJN)
+
+[More details](https://deepmind.google/technologies/project-astra/)
 
 ## Overview
 This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
