@@ -1,12 +1,15 @@
 # Gemini 2.0 Realtime API Demo
 
-This project demonstrates integration with Google's Gemini AI models using the `@google/generative-ai` library, showcasing functionalities such as:
+This project showcases integration with Google's Gemini AI models using the `@google/generative-ai` library. 
 
-*   **Streaming:** Receiving responses from the Gemini 2.0 API from a stream.
-*   **Text Generation:** Generating text-based responses from the Gemini 2.0 model.
-*   **Chat:** Using the Gemini 2.0 model for conversational chat interactions.
-*   **Search:** Leveraging Google Search to access the latest and largest source of information from the web.
-*   **Code Execution:** Leveraging Gemini 2.0 code execution capabilities to solve problems requiring code in a sandboxed environment using Python.
+Key features include:
+
+*   **Streaming:** Real-time responses from the Gemini 2.0 API via stream
+*   **Text Generation:** Natural language responses from the model
+*   **Chat:** Interactive conversational capabilities
+*   **Search:** Integration with Google Search for up-to-date information
+*   **Code Execution:** Python code execution in a sandboxed environment
+*   **Function Calling:** API integration and automation through defined functions
 
 ## Prerequisites
 
