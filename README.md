@@ -1,4 +1,4 @@
-#### Gemini 2.0 Realtime API Demo
+# Gemini 2.0 Realtime API Demo
 
 This project demonstrates integration with Google's Gemini AI models using the `@google/generative-ai` library, showcasing functionalities such as:
 
@@ -8,7 +8,7 @@ This project demonstrates integration with Google's Gemini AI models using the `
 *   **Search:** Leveraging Google Search to access the latest and largest source of information from the web.
 *   **Code Execution:** Leveraging Gemini 2.0 code execution capabilities to solve problems requiring code in a sandboxed environment using Python.
 
-#### Prerequisites
+## Prerequisites
 
 Before running the application, ensure you have the following:
 
@@ -16,7 +16,7 @@ Before running the application, ensure you have the following:
 *   **Node.js and npm:**  Ensure Node.js and npm are installed on your system.
 *   **Google AI API Key:** Obtain an API key from [Google AI Studio](https://makersuite.google.com/) and set it in the `environment.ts` file.
 
-#### Configuration
+## Configuration
 
 1.  **Environment Variables:**
     *   Run the command `ng g environments` to create a file named `environment.development.ts` in the `src/environments/` directory.
@@ -32,12 +32,8 @@ Before running the application, ensure you have the following:
 
     Run `npm install` to install the necessary dependencies, including `@google/generative-ai` and other required packages.
 
-## Additional Resources
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-
-
-# Gemini2LiveAngular
+## Gemini2LiveAngular
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.6.
 
@@ -92,3 +88,7 @@ ng e2e
 ```
 
 Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
