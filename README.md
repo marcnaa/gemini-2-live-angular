@@ -1,4 +1,4 @@
-# Gemini 2.0 Realtime API Demo
+# Gemini 2.0 Live API Demo
 
 ## Overview
 This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library. It's built with Angular and showcases real-time AI capabilities in a web application.
@@ -42,7 +42,7 @@ This project demonstrates integration with Google's Gemini AI models through the
 1. Launch the application and click the `Connect` button under `Connection Status`
 2. The demo uses Gemini 2.0 LIVE API which requires a WebSocket connection
 3. Monitor the browser's Developer Tools Console for connection issues
-4. Before diving into development, explore Gemini 2.0's realtime capabilities (voice interactions, webcam, and screen sharing) using [Google AI Studio Live](https://aistudio.google.com/live). This interactive playground will help you understand the available features and integration options before implementing them in your project.
+4. Before diving into development, explore Gemini 2.0's Live capabilities (voice interactions, webcam, and screen sharing) using [Google AI Studio Live](https://aistudio.google.com/live). This interactive playground will help you understand the available features and integration options before implementing them in your project.
 
 ### Feature Testing Examples
 Test the various capabilities using these example prompts:
