@@ -20,7 +20,7 @@ Gemini Live powers innovative applications across devices and platforms:
 
 Project Astra is a research initiative aimed at developing a universal AI assistant with advanced capabilities. It's designed to process multimodal information, including text, speech, images, and video, allowing for a more comprehensive understanding of user needs and context.
 
-![Project Astra](https://imgur.com/VEPikJN)
+![Project Astra](https://i.imgur.com/VEPikJN.png)
 
 [More details](https://deepmind.google/technologies/project-astra/)
 
