@@ -19,7 +19,7 @@
     <div class="input-area">
       <input #input [disabled]="!isConnected" placeholder="Type your message here" formControlName="message">
       <button type="button" (click)="reset()" [disabled]="input.value.length==0">X</button>
-      <button type="submit" [disabled]="!isConnected || isFormEmpty">Send</button>
+      <button type="submit" [disabled]="!isConnected || input.value.length==0">Send</button>
     </div>
   </form>
 </div>

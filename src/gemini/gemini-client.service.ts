@@ -4,10 +4,11 @@ import {
   MultimodalLiveAPIClientConnection,
   MultimodalLiveClient,
 } from './ws-client';
-import { Interrupted, LiveConfig, ModelTurn, ServerContent, StreamingLog, TurnComplete } from './types';
+import { Interrupted, LiveConfig, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
 import { environment } from '../../src/environments/environment.development';
 
 type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
+type ToolCallNullable = ToolCall | null;
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,8 @@ export class MultimodalLiveService implements OnDestroy {
   connected$ = this.connectedSubject.asObservable();
   private contentSubject = new BehaviorSubject<ServerContentNullable>(null);
   content$ = this.contentSubject.asObservable();
+  private toolSubject = new BehaviorSubject<ToolCallNullable>(null);
+  tool$ = this.toolSubject.asObservable();
   public config: LiveConfig = {
     model: "models/gemini-2.0-flash-exp",
   };
@@ -50,6 +53,10 @@ export class MultimodalLiveService implements OnDestroy {
       })
       .on('content', (data: ServerContent) => {
         this.contentSubject.next(data);
+        console.log(data);
+      })
+      .on('toolcall', (data: ToolCallNullable) => {
+        this.toolSubject.next(data);
         console.log(data);
       })
 
@@ -86,4 +93,8 @@ export class MultimodalLiveService implements OnDestroy {
   async send(message: any): Promise<any> {
     this.wsClient.send(message);
   }
+  async sendToolResponse(message: any): Promise<any> {
+    this.wsClient.sendToolResponse(message);
+  }
+
 }
