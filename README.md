@@ -1,6 +1,19 @@
 # Gemini 2.0 Live API Demo
 
-## Why should I care?
+## Overview
+This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
+
+This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library.
+
+## Core Features
+- Real-time streaming voice responses from Gemini 2.0 API
+- Natural language text generation
+- Interactive chat functionality
+- Google Search integration for current information
+- Secure Python code execution in sandbox
+- Automated function calling for API integration
+
+## What's Gemini 2.0 Live?
 
 Gemini Live API enables a new generation of dynamic, multimodal AI real-time experiences.
 
@@ -23,19 +36,6 @@ Project Astra is a research initiative aimed at developing a universal AI assist
 ![Project Astra](https://i.imgur.com/VEPikJN.png)
 
 [More details](https://deepmind.google/technologies/project-astra/)
-
-## Overview
-This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
-
-This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library.
-
-## Core Features
-- Real-time streaming voice responses from Gemini 2.0 API
-- Natural language text generation
-- Interactive chat functionality
-- Google Search integration for current information
-- Secure Python code execution in sandbox
-- Automated function calling for API integration
 
 ## Setup Instructions
 
