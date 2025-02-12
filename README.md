@@ -1,7 +1,9 @@
 # Gemini 2.0 Live API Demo
 
 ## Overview
-This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library. It's built with Angular and showcases real-time AI capabilities in a web application.
+This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
+
+This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library.
 
 ## Core Features
 - Real-time streaming voice responses from Gemini 2.0 API
