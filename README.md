@@ -1,5 +1,20 @@
 # Gemini 2.0 Live API Demo
 
+## Why should I care?
+
+Gemini Live enables a new generation of dynamic, multimodal AI real-time experiences.
+
+### What's Possible with Gemini Live?
+Gemini Live powers innovative applications across devices and platforms:
+
+- **Hands-free AI Assistance**: Users interact naturally through voice while cooking, driving, or multitasking
+- **Real-time Visual Understanding**: Get instant AI responses as you show objects, documents, or scenes through your camera
+- **Smart Home Automation**: Control your environment with natural voice commands - from adjusting lights to managing thermostats
+- **Seamless Shopping**: Browse products, compare options, and complete purchases through conversation
+- **Live Problem Solving**: Share your screen to get real-time guidance, troubleshooting, or explanations
+
+[![Gemini Live on Pixel 9](https://img.youtube.com/vi/mNTGbi5ReMc/0.jpg)](https://www.youtube.com/watch?v=mNTGbi5ReMc)
+
 ## Overview
 This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
 
