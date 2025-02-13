@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@100;200;300;400;500;700;900&display=swap');
+
 :root {
   --text: white;
   --gray-200: #b4b8bb;
@@ -50,4 +52,14 @@
   --Red-500: #ff4600;
   --Red-600: #e03c00;
   --Red-700: #bd3000;
+}
+
+html, body {
+  font-family: var(--font-family);
+  font-size: 16px;
+  color: var(--color);
+  background-color: var(--background);
+  margin: 15px;
+  padding: 15px;
+  overflow-x: hidden;
 }

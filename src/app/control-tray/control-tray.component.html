@@ -1,19 +1,20 @@
 <section class="control-tray">
   <canvas #renderCanvas style="display: none"></canvas>
+
   <nav class="actions-nav" [class.disabled]="!isConnected">
-    <button class="action-button mic-button" (click)="toggleMute()">
+    <!-- <button class="action-button mic-button" (click)="toggleMute()">
       <span class="material-symbols-outlined filled">
         @if (!muted) { mic } @else { mic_off}
       </span>
     </button>
-
+ -->
     <div class="action-button no-action outlined">
       <app-audio-pulse [volume]="(volume$ | async)!"
         [active]="isConnected!"
         [hover]="false"></app-audio-pulse>
     </div>
 
-    @if (supportsVideo) {
+<!--     @if (supportsVideo) {
       <button class="action-button" (click)="changeStreams(screenCaptureStream)()">
         <span class="material-symbols-outlined">
           @if (!(screenCaptureStream.isStreaming | async)) {
@@ -26,8 +27,8 @@
         <span class="material-symbols-outlined">
           @if (!(webcamStream.isStreaming | async)) { videocam } @else { videocam_off }
         </span>
-      </button>
-    }
+      </button> 
+    } -->
 
     <ng-content></ng-content>
   </nav>

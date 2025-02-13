@@ -30,11 +30,11 @@ export class MultimodalLiveService implements OnDestroy {
   public config : LiveConfig = {
     model: "models/gemini-2.0-flash-exp",
     generationConfig: {
-      responseModalities: "text",
-      // responseModalities: "audio", // note "audio" doesn't send a text response over
-      // speechConfig: {
-      //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
-      // },
+      // responseModalities: "text",
+      responseModalities: "audio", // note "audio" doesn't send a text response over
+      speechConfig: {
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+      },
     },
     systemInstruction: {
       parts: [

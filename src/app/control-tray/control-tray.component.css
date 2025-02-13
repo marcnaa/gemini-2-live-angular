@@ -51,10 +51,6 @@
     --volume: 0px; /* Define the initial value; adjust if needed */
   }
   
-  .disabled .mic-button,
-  .mic-button.disabled {
-  }
-  
   .disabled .mic-button:before,
   .mic-button.disabled:before {
       background: rgba(0, 0, 0, 0);
@@ -92,9 +88,6 @@
     transition: all 0.02s ease-in-out;
   }
   
-  .connect-toggle {
-  }
-  
   .connect-toggle:focus {
     border: 2px solid var(--Neutral-20); /* Ensure --Neutral-20 is defined */
     outline: 2px solid var(--Neutral-80); /* Ensure --Neutral-80 is defined */
@@ -107,14 +100,15 @@
   
   .control-tray {
     position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translate(-50%, 0);
+    /* bottom: 0; */
+    top: 0;
+    right: 0;
+    /* transform: translate(-50%, 0); */
     display: inline-flex;
     justify-content: center;
     align-items: flex-start;
     gap: 8px;
-    padding-bottom: 18px;
+    padding: 7px;
   }
   
   .control-tray .disabled .action-button,

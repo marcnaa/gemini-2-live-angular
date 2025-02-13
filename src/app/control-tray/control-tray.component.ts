@@ -10,12 +10,11 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { AudioPulseComponent } from '../audio-pulse/audio-pulse.component';
 import { AudioRecorder } from '../../gemini/audio-recorder';
 import { MultimodalLiveService } from '../../gemini/gemini-client.service';
 import { CommonModule } from '@angular/common';
-import { MultimodalLiveClient } from '../../gemini/ws-client';
 import { WebcamService } from '../../gemini/webcam.service';
 import { ScreenCaptureService } from '../../gemini/screen-capture.service';
 
@@ -123,7 +122,7 @@ export class ControlTrayComponent
 
   createWebcamStream(): UseMediaStreamResult {
     return {
-      isStreaming: this.webcamService.isStreaming$,
+      isStreaming: this.webcamService?.isStreaming$,
       start: () => this.webcamService.start(),
       stop: () => this.webcamService.stop()
     };
@@ -131,7 +130,7 @@ export class ControlTrayComponent
 
   createScreenCaptureStream(): UseMediaStreamResult {
     return {
-      isStreaming: this.screenCaptureService.isStreaming$,
+      isStreaming: this.screenCaptureService?.isStreaming$,
       start: () => this.screenCaptureService.start(),
       stop: () => this.screenCaptureService.stop()
     };

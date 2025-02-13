@@ -1,14 +1,6 @@
 <p>Connection Status: {{ isConnected ? 'Connected' : 'Disconnected' }}</p>
 <button (click)="connect()" [disabled]="isConnected">Connect</button>
 <button (click)="disconnect()" [disabled]="!isConnected">Disconnect</button>
-
-<app-control-tray 
-  [videoRef]="myVideo" 
-  [supportsVideo]="true" 
-  (onVideoStreamChange)="handleVideoStreamChange($event)">
-</app-control-tray>
-<video #myVideo width="640" height="480" autoplay muted></video>
-
 <p>Conversation</p>
 <div class="chat-container">
   <div class="message-list">
@@ -31,6 +23,13 @@
     </div>
   </form>
 </div>
+<app-control-tray 
+  [videoRef]="myVideo" 
+  [supportsVideo]="true" 
+  (onVideoStreamChange)="handleVideoStreamChange($event)">
+</app-control-tray>
+<video #myVideo width="260" height="120" autoplay muted></video>
+
 
 <style>
   .chat-container {
@@ -57,7 +56,6 @@
   .input-area {
     display: flex;
     position: sticky;
-    background-color: white;
     padding-top: 10px;
   }
 
@@ -72,8 +70,10 @@
 
   .message.user {
     background-color: #eeeeee;
+    color: #000;
   }
   .message.model {
     background-color: #cfd8dc;
+    color: #000;
   }
 </style>
