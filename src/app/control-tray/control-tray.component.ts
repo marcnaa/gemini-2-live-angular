@@ -45,14 +45,10 @@ export class ControlTrayComponent
   screenCaptureStream: UseMediaStreamResult = this.createScreenCaptureStream(); 
 
   activeVideoStream: MediaStream | null = null;
-  inVolume: number = 0;
   audioRecorder: AudioRecorder = new AudioRecorder();
 
   muted: boolean = false;
-
-  // Access the service's observables directly:
-  connected$: Observable<boolean>;
-  volume$: Observable<number>;
+  inVolume: number = 0;
   isConnected: boolean = false;
 
   private ngUnsubscribe = new Subject<void>(); // Used to unsubscribe from observables
@@ -72,13 +68,10 @@ export class ControlTrayComponent
     private webcamService: WebcamService,
     private screenCaptureService: ScreenCaptureService,
     private cdr: ChangeDetectorRef,
-  ) {
-    this.connected$ = multimodalLiveService.connected$;
-    this.volume$ = multimodalLiveService.volume$;
-  }
+  ) { }
 
   ngOnInit(): void {
-    this.connected$
+    this.multimodalLiveService.connected$
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe((connected) => {
         this.isConnected = connected;
@@ -86,8 +79,13 @@ export class ControlTrayComponent
           this.connectButtonRef.nativeElement.focus();
           this.cdr.detectChanges(); // Trigger change detection after focus
         }
+        this.handleAudioRecording();
       });
-    this.setupEventListeners();
+    this.multimodalLiveService.volume$
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((volume) => {
+        this.inVolume = volume;
+      });
   }
 
   ngAfterViewInit(): void {
@@ -97,26 +95,27 @@ export class ControlTrayComponent
   ngOnDestroy(): void {
     this.ngUnsubscribe.next(); // Unsubscribe from all subscriptions
     this.ngUnsubscribe.complete(); // Complete the Subject
-    this.audioRecorder.stop();
+    this.audioRecorder
+      .off('data')
+      .off('volume')
+      .stop();
   }
 
-  setupEventListeners() {
-    const onData = (base64: string) => {
-      this.multimodalLiveService.sendRealtimeInput([
-        {
-          mimeType: 'audio/pcm;rate=16000',
-          data: base64,
-        },
-      ]);
-    };
-    this.audioRecorder.stop(); // prevent race conditions and free resources.
-    if (this.isConnected && !this.muted && this.audioRecorder) {
+  handleAudioRecording() {
+    if (this.isConnected && !this.muted) {
       this.audioRecorder
-        .on("data", onData)
-        .on("volume", (volume) => {
-          this.volume = volume;
+        .on('data', (base64: string) => {
+          this.multimodalLiveService.sendRealtimeInput([{
+            mimeType: 'audio/pcm;rate=16000',
+            data: base64
+          }]);
+        })
+        .on('volume', (volume: number) => {
+          this.inVolume = volume;
         })
         .start();
+    } else {
+      this.audioRecorder.stop();
     }
   }
 
@@ -143,6 +142,7 @@ export class ControlTrayComponent
 
   toggleMute(): void {
     this.muted = !this.muted;
+    this.handleAudioRecording();
   }
 
   //handler for swapping from one video-stream to the next
@@ -177,7 +177,6 @@ export class ControlTrayComponent
     } else {
       this.multimodalLiveService.connect();
     }
-    this.setupEventListeners();
   }
 
   private startVideoFrameSending(): void {

@@ -2,30 +2,29 @@
   <canvas #renderCanvas style="display: none"></canvas>
 
   <nav class="actions-nav" [class.disabled]="!isConnected">
-    <!-- <button class="action-button mic-button" (click)="toggleMute()">
+    <button class="action-button mic-button" (click)="toggleMute()">
       <span class="material-symbols-outlined filled">
-        @if (!muted) { mic } @else { mic_off}
+        {{muted ? 'mic_off' : 'mic'}}
       </span>
     </button>
- -->
+
     <div class="action-button no-action outlined">
-      <app-audio-pulse [volume]="(volume$ | async)!"
+      <app-audio-pulse 
+        [volume]="inVolume!"
         [active]="isConnected!"
-        [hover]="false"></app-audio-pulse>
+        [hover]="false"/>
     </div>
 
 <!--     @if (supportsVideo) {
       <button class="action-button" (click)="changeStreams(screenCaptureStream)()">
         <span class="material-symbols-outlined">
-          @if (!(screenCaptureStream.isStreaming | async)) {
-            present_to_all } @else { cancel_presentation
-          }
+          {{(screenCaptureStream.isStreaming | async) ? 'cancel_presentation' : 'present_to_all'}}
         </span>
       </button>
 
       <button class="action-button" (click)="changeStreams(webcamStream)()">
         <span class="material-symbols-outlined">
-          @if (!(webcamStream.isStreaming | async)) { videocam } @else { videocam_off }
+          {{(webcamStream.isStreaming | async) ? 'videocam_off' : 'videocam'}}
         </span>
       </button> 
     } -->
@@ -39,7 +38,7 @@
         [class.connected]="isConnected"
         (click)="connectToggle()">
         <span class="material-symbols-outlined filled">
-          @if (isConnected) { pause } @else { play_arrow }
+          {{isConnected ? 'pause' : 'play_arrow'}}
         </span>
       </button>
     </div>
