@@ -55,6 +55,7 @@ Project Astra is a research initiative aimed at developing a universal AI assist
    Create `environment.development.ts` in `src/environments/` with:
    ```typescript
    export const environment = {
+     WS_URL: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent',
      API_KEY: 'YOUR_GOOGLE_AI_API_KEY',
    };
    ```
