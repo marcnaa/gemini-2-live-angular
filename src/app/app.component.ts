@@ -1,10 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MultimodalLiveService } from '../gemini/gemini-client.service';
 import { Subscription } from 'rxjs';
 import { Part, SchemaType } from '@google/generative-ai';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LiveConfig, ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
+import { ControlTrayComponent } from './control-tray/control-tray.component';
 
 type ChatMessage = {
   role: string;
@@ -15,9 +16,11 @@ type ChatMessage = {
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ControlTrayComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {
+  @ViewChild('myVideo') myVideoRef!: ElementRef<HTMLVideoElement>;
+
   title = 'gemini-2-live-angular';
   isConnected: boolean = false;
   volume: number = 0;
@@ -193,5 +196,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   reset(): void {
     this.chatForm.reset();
+  }
+
+  handleVideoStreamChange(stream: MediaStream | null) {
+    // Handle the video stream change here (e.g., update the video element)
+    if(this.myVideoRef){
+      this.myVideoRef.nativeElement.srcObject = stream;
+    }
   }
 }

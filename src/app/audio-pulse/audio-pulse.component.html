@@ -1,0 +1,6 @@
+<div class="audioPulse" [class.active]="active" [class.hover]="hover">
+  @for (line of lines; track $index) {
+    <div class="audioPulseLine" #lineElement
+      [style.animationDelay]="getAnimationDelay($index)"></div>
+  }
+</div>

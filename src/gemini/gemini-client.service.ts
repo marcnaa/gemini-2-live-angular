@@ -10,6 +10,7 @@ import { environment } from '../../src/environments/environment.development';
 import { AudioStreamer } from './audio-streamer'; 
 import VolMeterWorket from './worklet.vol-meter'; 
 import { audioContext } from './utils'; 
+import { GenerativeContentBlob } from '@google/generative-ai';
 
 
 type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
@@ -19,15 +20,33 @@ type ToolCallNullable = ToolCall | null;
   providedIn: 'root',
 })
 export class MultimodalLiveService implements OnDestroy {
-  private wsClient: MultimodalLiveClient;
+  public wsClient: MultimodalLiveClient;
   private connectedSubject = new BehaviorSubject<boolean>(false);
   connected$ = this.connectedSubject.asObservable();
   private contentSubject = new BehaviorSubject<ServerContentNullable>(null);
   content$ = this.contentSubject.asObservable();
   private toolSubject = new BehaviorSubject<ToolCallNullable>(null);
   tool$ = this.toolSubject.asObservable();
-  public config: LiveConfig = {
+  public config : LiveConfig = {
     model: "models/gemini-2.0-flash-exp",
+    generationConfig: {
+      responseModalities: "text",
+      // responseModalities: "audio", // note "audio" doesn't send a text response over
+      // speechConfig: {
+      //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+      // },
+    },
+    systemInstruction: {
+      parts: [
+        {
+          text: 'You are a helpful assistant.',
+        },
+      ],
+    },
+    tools: [
+      { googleSearch: {} }, 
+      { codeExecution: {} },
+    ],
   };
   private audioStreamer: AudioStreamer | null = null;
   private volumeSubject = new BehaviorSubject<number>(0);
@@ -111,10 +130,7 @@ export class MultimodalLiveService implements OnDestroy {
     }
   }
   
-  async connect(config: LiveConfig): Promise<void> {
-    if (!config) {
-      throw new Error('Config has not been set');
-    }
+  async connect(config: LiveConfig = this.config): Promise<void> {
     this.wsClient.disconnect();
     try {
       await this.wsClient.connect(config);
@@ -141,6 +157,10 @@ export class MultimodalLiveService implements OnDestroy {
   }
   async sendToolResponse(message: any): Promise<any> {
     this.wsClient.sendToolResponse(message);
+  }
+
+  async sendRealtimeInput(chunks: GenerativeContentBlob[]): Promise<any> {
+    this.wsClient.sendRealtimeInput(chunks);
   }
 
 }

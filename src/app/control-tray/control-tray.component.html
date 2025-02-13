@@ -1,0 +1,47 @@
+<section class="control-tray">
+  <canvas #renderCanvas style="display: none"></canvas>
+  <nav class="actions-nav" [class.disabled]="!isConnected">
+    <button class="action-button mic-button" (click)="toggleMute()">
+      <span class="material-symbols-outlined filled">
+        @if (!muted) { mic } @else { mic_off}
+      </span>
+    </button>
+
+    <div class="action-button no-action outlined">
+      <app-audio-pulse [volume]="(volume$ | async)!"
+        [active]="isConnected!"
+        [hover]="false"></app-audio-pulse>
+    </div>
+
+    @if (supportsVideo) {
+      <button class="action-button" (click)="changeStreams(screenCaptureStream)()">
+        <span class="material-symbols-outlined">
+          @if (!(screenCaptureStream.isStreaming | async)) {
+            present_to_all } @else { cancel_presentation
+          }
+        </span>
+      </button>
+
+      <button class="action-button" (click)="changeStreams(webcamStream)()">
+        <span class="material-symbols-outlined">
+          @if (!(webcamStream.isStreaming | async)) { videocam } @else { videocam_off }
+        </span>
+      </button>
+    }
+
+    <ng-content></ng-content>
+  </nav>
+
+  <div class="connection-container" [class.connected]="isConnected">
+    <div class="connection-button-container">
+      <button #connectButton class="action-button connect-toggle"
+        [class.connected]="isConnected"
+        (click)="connectToggle()">
+        <span class="material-symbols-outlined filled">
+          @if (isConnected) { pause } @else { play_arrow }
+        </span>
+      </button>
+    </div>
+    <span class="text-indicator">Streaming</span>
+  </div>
+</section>
