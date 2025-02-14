@@ -175,3 +175,8 @@
       opacity: 0.9;
     }
   }
+
+.actions-nav.disabled * {
+  pointer-events: none;
+  cursor: default;
+}

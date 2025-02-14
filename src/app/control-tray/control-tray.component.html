@@ -16,15 +16,15 @@
     </div>
 
     @if (supportsVideo) {
-      <button class="action-button" (click)="toggleWebCamStream()">
+      <button class="action-button" (click)="toggleScreenCaptureStream()">
         <span class="material-symbols-outlined">
-          {{webcamService.isStreaming ? 'cancel_presentation' : 'present_to_all'}}
+          {{screenCaptureService.isStreaming ? 'cancel_presentation' : 'present_to_all'}}
         </span>
       </button>
 
-      <button class="action-button" (click)="toggleScreenCaptureStream()">
+      <button class="action-button" (click)="toggleWebCamStream()">
         <span class="material-symbols-outlined">
-          {{screenCaptureService.isStreaming ? 'videocam_off' : 'videocam'}}
+          {{webcamService.isStreaming ? 'videocam_off' : 'videocam'}}
         </span>
       </button>
     }
