@@ -83,6 +83,16 @@ export class ControlTrayComponent
           this.connectButtonRef.nativeElement.focus();
           this.cdr.detectChanges(); // Trigger change detection after focus
         }
+        if(!connected){
+          if (this.screenCaptureService.isStreaming) {
+            this.screenCaptureService.stop();
+            this.onVideoStreamChange.emit(null);
+          }
+          if (this.webcamService.isStreaming) {
+            this.webcamService.stop();
+            this.onVideoStreamChange.emit(null);
+          }
+        }
         this.handleAudioRecording();
       });
     this.multimodalLiveService.volume$
