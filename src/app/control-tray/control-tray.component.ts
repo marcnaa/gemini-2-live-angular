@@ -10,7 +10,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, takeUntil, lastValueFrom, last } from 'rxjs';
 import { AudioPulseComponent } from '../audio-pulse/audio-pulse.component';
 import { AudioRecorder } from '../../gemini/audio-recorder';
 import { MultimodalLiveService } from '../../gemini/gemini-client.service';
@@ -20,7 +20,7 @@ import { ScreenCaptureService } from '../../gemini/screen-capture.service';
 
 //Interface for the result of your stream hooks
 interface UseMediaStreamResult {
-  isStreaming: Observable<boolean>;
+  isStreaming: boolean;
   start: () => Promise<MediaStream | null>;
   stop: () => void;
 }
@@ -32,8 +32,8 @@ interface UseMediaStreamResult {
   styleUrls: ['./control-tray.component.css'],
 })
 export class ControlTrayComponent
-  implements OnInit, AfterViewInit, OnDestroy {
-    
+  implements OnInit, OnDestroy {
+
   @Input() videoRef!: HTMLVideoElement; // Make sure to pass the video element!
   @Input() supportsVideo: boolean = false;
   @Output() onVideoStreamChange = new EventEmitter<MediaStream | null>();
@@ -41,15 +41,16 @@ export class ControlTrayComponent
   @ViewChild('renderCanvas') renderCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('connectButton') connectButtonRef!: ElementRef<HTMLButtonElement>;
 
-  webcamStream: UseMediaStreamResult = this.createWebcamStream();
-  screenCaptureStream: UseMediaStreamResult = this.createScreenCaptureStream(); 
+  webcamStream: UseMediaStreamResult;
+  screenCaptureStream: UseMediaStreamResult;
 
   activeVideoStream: MediaStream | null = null;
   audioRecorder: AudioRecorder = new AudioRecorder();
 
-  muted: boolean = false;
+  muted: boolean = true;
   inVolume: number = 0;
   isConnected: boolean = false;
+  cancelRaF: number = -1;
 
   private ngUnsubscribe = new Subject<void>(); // Used to unsubscribe from observables
 
@@ -65,10 +66,13 @@ export class ControlTrayComponent
 
   constructor(
     private multimodalLiveService: MultimodalLiveService,
-    private webcamService: WebcamService,
-    private screenCaptureService: ScreenCaptureService,
+    public webcamService: WebcamService,
+    public screenCaptureService: ScreenCaptureService,
     private cdr: ChangeDetectorRef,
-  ) { }
+  ) {
+    this.webcamStream = this.createWebcamStream();
+    this.screenCaptureStream = this.createScreenCaptureStream();
+  }
 
   ngOnInit(): void {
     this.multimodalLiveService.connected$
@@ -86,10 +90,28 @@ export class ControlTrayComponent
       .subscribe((volume) => {
         this.inVolume = volume;
       });
+
+    this.webcamService.stream$
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((stream) => {
+        this.changeActiveVideoStream(stream);
+      });
+
+    this.screenCaptureService.stream$
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((stream) => {
+        this.changeActiveVideoStream(stream);
+      });
   }
 
-  ngAfterViewInit(): void {
-    this.initVideoStream();
+  changeActiveVideoStream(stream: MediaStream | null) {
+    if (this.activeVideoStream != stream) {
+      this.activeVideoStream = stream;
+      if (this.videoRef) {
+        this.videoRef.srcObject = this.activeVideoStream;
+      }
+      this.initVideoStream();
+    }
   }
 
   ngOnDestroy(): void {
@@ -109,6 +131,7 @@ export class ControlTrayComponent
             mimeType: 'audio/pcm;rate=16000',
             data: base64
           }]);
+          //console.log(`[Audio]: Stream going out`, base64);
         })
         .on('volume', (volume: number) => {
           this.inVolume = volume;
@@ -121,7 +144,7 @@ export class ControlTrayComponent
 
   createWebcamStream(): UseMediaStreamResult {
     return {
-      isStreaming: this.webcamService?.isStreaming$,
+      isStreaming: this.webcamService.isStreaming,
       start: () => this.webcamService.start(),
       stop: () => this.webcamService.stop()
     };
@@ -129,7 +152,7 @@ export class ControlTrayComponent
 
   createScreenCaptureStream(): UseMediaStreamResult {
     return {
-      isStreaming: this.screenCaptureService?.isStreaming$,
+      isStreaming: this.screenCaptureService.isStreaming,
       start: () => this.screenCaptureService.start(),
       stop: () => this.screenCaptureService.stop()
     };
@@ -137,7 +160,9 @@ export class ControlTrayComponent
 
   // Initial video stream setup
   private initVideoStream(): void {
-    this.startVideoFrameSending();
+    if (this.isConnected && this.activeVideoStream) {
+      this.cancelRaF = requestAnimationFrame(this.sendVideoFrame);
+    }
   }
 
   toggleMute(): void {
@@ -145,30 +170,34 @@ export class ControlTrayComponent
     this.handleAudioRecording();
   }
 
-  //handler for swapping from one video-stream to the next
-  changeStreams(next?: UseMediaStreamResult) {
-    return async () => {
-      if (next) {
-        let mediaStream: MediaStream | null;
-
-        if (next === this.webcamStream) {
-          mediaStream = await this.webcamService.start();
-        } else {
-          mediaStream = await this.screenCaptureService.start();
-        }
-
-        this.activeVideoStream = mediaStream;
-        this.onVideoStreamChange.emit(mediaStream);
-      } else {
-        this.activeVideoStream = null;
+  async toggleWebCamStream(): Promise<void> {
+    if (this.webcamService.isStreaming) {
+      this.webcamService.stop();
+      this.onVideoStreamChange.emit(null);
+    } else {
+      // avoid two streams at the same time
+      if (this.screenCaptureService.isStreaming) {
+        this.screenCaptureService.stop();
         this.onVideoStreamChange.emit(null);
       }
+      let stream = await this.webcamService.start();
+      this.onVideoStreamChange.emit(stream);
+    }
+  }
 
-      [this.webcamStream, this.screenCaptureStream]
-        .filter((msr) => msr !== next)
-        .forEach((msr) => msr.stop());
-      this.startVideoFrameSending();
-    };
+  async toggleScreenCaptureStream(): Promise<void> {
+    if (this.screenCaptureService.isStreaming) {
+      this.screenCaptureService.stop();
+      this.onVideoStreamChange.emit(null);
+    } else {
+      // avoid two streams at the same time
+      if (this.webcamService.isStreaming) {
+        this.webcamService.stop();
+        this.onVideoStreamChange.emit(null);
+      }
+      let stream = await this.screenCaptureService.start();
+      this.onVideoStreamChange.emit(stream);
+    }
   }
 
   connectToggle(): void {
@@ -179,12 +208,9 @@ export class ControlTrayComponent
     }
   }
 
-  private startVideoFrameSending(): void {
-    // Clear any existing intervals
-    this.sendVideoFrame();
-  }
-
   private sendVideoFrame = () => {
+    if (!this.webcamService.isStreaming && !this.screenCaptureService.isStreaming) return;
+
     const video = this.videoRef;
     const canvas = this.renderCanvasRef?.nativeElement;
     const ctx = canvas.getContext('2d');
@@ -198,9 +224,10 @@ export class ControlTrayComponent
       const base64 = canvas.toDataURL('image/jpeg', 1.0);
       const data = base64.slice(base64.indexOf(',') + 1, Infinity);
       this.multimodalLiveService.sendRealtimeInput([{ mimeType: 'image/jpeg', data }]);
+      //console.log(`[sendVideoFrame]: Stream going out`, data);
     }
     if (this.isConnected) {
-      setTimeout(this.sendVideoFrame, 1000 / 0.5); // Schedule the next frame
+      setTimeout(this.sendVideoFrame, 1000 / 0.5);
     }
   };
 }

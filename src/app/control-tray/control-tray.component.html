@@ -10,24 +10,24 @@
 
     <div class="action-button no-action outlined">
       <app-audio-pulse 
-        [volume]="inVolume!"
-        [active]="isConnected!"
+        [volume]="inVolume"
+        [active]="isConnected"
         [hover]="false"/>
     </div>
 
-<!--     @if (supportsVideo) {
-      <button class="action-button" (click)="changeStreams(screenCaptureStream)()">
+    @if (supportsVideo) {
+      <button class="action-button" (click)="toggleWebCamStream()">
         <span class="material-symbols-outlined">
-          {{(screenCaptureStream.isStreaming | async) ? 'cancel_presentation' : 'present_to_all'}}
+          {{webcamService.isStreaming ? 'cancel_presentation' : 'present_to_all'}}
         </span>
       </button>
 
-      <button class="action-button" (click)="changeStreams(webcamStream)()">
+      <button class="action-button" (click)="toggleScreenCaptureStream()">
         <span class="material-symbols-outlined">
-          {{(webcamStream.isStreaming | async) ? 'videocam_off' : 'videocam'}}
+          {{screenCaptureService.isStreaming ? 'videocam_off' : 'videocam'}}
         </span>
-      </button> 
-    } -->
+      </button>
+    }
 
     <ng-content></ng-content>
   </nav>

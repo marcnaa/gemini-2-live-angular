@@ -44,6 +44,10 @@ export class WebcamService implements OnDestroy {
     this.stop();
   }
 
+  get isStreaming() {
+    return this.isStreamingSubject.value;
+  }
+
   start(): Promise<MediaStream | null> {
     return navigator.mediaDevices.getUserMedia({ video: true })
       .then(mediaStream => {

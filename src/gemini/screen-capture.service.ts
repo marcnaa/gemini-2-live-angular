@@ -44,6 +44,10 @@ export class ScreenCaptureService implements OnDestroy {
         this.stop();
     }
 
+    get isStreaming() {
+        return this.isStreamingSubject.value;
+    }
+
     start(): Promise<MediaStream | null> {
         return (navigator.mediaDevices as any).getDisplayMedia({ video: true })
             .then((mediaStream: MediaStream | null) => {
