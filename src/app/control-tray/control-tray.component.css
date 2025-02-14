@@ -176,7 +176,7 @@
     }
   }
 
-.actions-nav.disabled * {
+.actions-nav.disabled *, .no-action {
   pointer-events: none;
   cursor: default;
 }
