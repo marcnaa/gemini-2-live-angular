@@ -3,6 +3,8 @@
 ## Overview
 This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
 
+![diagram](https://i.imgur.com/n6IEjAo.png)
+
 This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library.
 
 > This project started as a migration to Angular of the [Multimodal Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console) as is only available in React at the moment. The Gemini Live API is subject to change as there is currently no official client or SDK available for JavaScript.
