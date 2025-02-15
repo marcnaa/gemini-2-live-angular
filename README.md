@@ -3,7 +3,7 @@
 ## Overview
 This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
 
-![diagram](https://i.imgur.com/n6IEjAo.png)
+![diagram](https://i.imgur.com/sBlt0Um.png)
 
 This project demonstrates integration with Google's Gemini AI models through the `@google/generative-ai` library.
 
