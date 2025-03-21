@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MultimodalLiveService } from '../gemini/gemini-client.service';
 import { Subscription } from 'rxjs';
-import { Part, Type } from '@google/genai';
+import { Part, Type, LiveConnectConfig, Modality } from '@google/genai';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { LiveConfig, ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
+import { ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
 import { ControlTrayComponent } from './control-tray/control-tray.component';
 
 type ChatMessage = {
@@ -121,58 +121,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   connect(): void {
-    // function calling setup
-    
-    // Define the function to be called.
-    // Following the specificication at https://spec.openapis.org/oas/v3.0.3
-    const getCurrentWeatherFunction = {
-      name: "getCurrentWeather",
-      description: "Get the current weather in a given location",
-      parameters: {
-        type: Type.OBJECT,
-        properties: {
-          location: {
-            type: Type.STRING,
-            description: "The city and state, e.g. San Francisco, CA",
-          },
-          unit: {
-            type: Type.STRING,
-            enum: ["celsius", "fahrenheit"],
-            description: "The temperature unit to use. Infer this from the users location.",
-          },
-        },
-        required: ["location", "unit"],
-      },
-    };
-    
-    let config : LiveConfig = {
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        // responseModalities: "text",
-        responseModalities: "audio", // note "audio" doesn't send a text response over
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
-        },
-      },
-      systemInstruction: {
-        parts: [
-          {
-            text: 'You are a helpful assistant.',
-          },
-        ],
-      },
-      tools: [
-        { googleSearch: {} }, 
-        { codeExecution: {} },
-        {
-          functionDeclarations: [
-            getCurrentWeatherFunction,
-          ],
-        },
-      ],
-    };
-
-    this.multimodalLiveService.connect(config).catch(err => {
+    this.multimodalLiveService.connect().catch(err => {
       console.error("Failed to connect:", err);
     });
   }

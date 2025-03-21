@@ -4,13 +4,13 @@ import {
   MultimodalLiveAPIClientConnection,
   MultimodalLiveClient,
 } from './ws-client';
-import { Interrupted, LiveConfig, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
+import { Interrupted, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
 import { environment } from '../../src/environments/environment.development';
 
 import { AudioStreamer } from './audio-streamer'; 
 import VolMeterWorket from './worklet.vol-meter'; 
 import { audioContext } from './utils'; 
-import { Blob } from '@google/genai';
+import { Blob, LiveConnectConfig, Modality, Type } from '@google/genai';
 
 
 type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
@@ -27,14 +27,40 @@ export class MultimodalLiveService implements OnDestroy {
   content$ = this.contentSubject.asObservable();
   private toolSubject = new BehaviorSubject<ToolCallNullable>(null);
   tool$ = this.toolSubject.asObservable();
-  public config : LiveConfig = {
-    model: "gemini-2.0-flash-exp",
-    generationConfig: {
-      //responseModalities: "text",
-      responseModalities: "audio", // note "audio" doesn't send a text response over
-      speechConfig: {
-        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+
+  // function calling setup
+  // Define the function to be called.
+  // Following the specificication at https://spec.openapis.org/oas/v3.0.3
+  private getCurrentWeatherFunction = {
+    name: "getCurrentWeather",
+    description: "Get the current weather in a given location",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        location: {
+          type: Type.STRING,
+          description: "The city and state, e.g. San Francisco, CA",
+        },
+        unit: {
+          type: Type.STRING,
+          enum: ["celsius", "fahrenheit"],
+          description: "The temperature unit to use. Infer this from the users location.",
+        },
       },
+      required: ["location", "unit"],
+    },
+  };
+    
+  public config: LiveConnectConfig = {
+    //model: "gemini-2.0-flash-exp",
+
+    // responseModalities: [Modality.TEXT],
+    responseModalities: [Modality.TEXT], // note "audio" doesn't send a text response over
+    // speechConfig: {
+    //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+    // },
+    generationConfig: {
+      //maxOutputTokens: 100,
     },
     systemInstruction: {
       parts: [
@@ -44,8 +70,13 @@ export class MultimodalLiveService implements OnDestroy {
       ],
     },
     tools: [
-      { googleSearch: {} }, 
+      { googleSearch: {} },
       { codeExecution: {} },
+      {
+        functionDeclarations: [
+          this.getCurrentWeatherFunction,
+        ],
+      },
     ],
   };
   private audioStreamer: AudioStreamer | null = null;
@@ -128,10 +159,10 @@ export class MultimodalLiveService implements OnDestroy {
     }
   }
   
-  async connect(config: LiveConfig = this.config): Promise<void> {
+  async connect(): Promise<void> {
     this.wsClient.disconnect();
     try {
-      await this.wsClient.connect(config);
+      await this.wsClient.connect(this.config);
       this.setConnected(true);
     } catch (error) {
       console.error('Connection error:', error);

@@ -26,6 +26,7 @@ import {
   Part,
   Blob,
   Content,
+  LiveConnectConfig,
 } from '@google/genai';
 
 import { EventEmitter } from "eventemitter3";
@@ -48,7 +49,6 @@ import {
   ToolCall,
   ToolCallCancellation,
   ToolResponseMessage,
-  type LiveConfig,
 } from "./types";
 import { blobToJSON, base64ToArrayBuffer } from "./utils";
 
@@ -83,7 +83,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
   private _session: any;
 
   public ws: WebSocket | null = null;
-  protected config: LiveConfig | null = null;
+  protected config: LiveConnectConfig | null = null;
   public url: string = "";
 
   constructor({ apiKey }: MultimodalLiveAPIClientConnection) {
@@ -103,9 +103,11 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     this.emit("log", log);
   }
 
-  async connect(config: LiveConfig): Promise<boolean> {
+  async connect(config: LiveConnectConfig): Promise<boolean> {
+    debugger;
     return new Promise(async (resolve, reject) => {
       this._session = await this._ai.live.connect({
+        model: "gemini-2.0-flash-exp",
         callbacks: {
           onopen: () => {
             this.log(`client.connect`, `connected`);
@@ -128,7 +130,9 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
             console.log(ev);
           },
         },
-        ...config
+        config: {
+          ...config
+        },
       });
     });
   }
