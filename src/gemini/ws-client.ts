@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
-import { Content, GenerativeContentBlob, Part } from "@google/generative-ai";
+import {
+  GoogleGenAI,
+  Type,
+  FunctionCallingConfigMode,
+  DynamicRetrievalConfigMode,
+  HarmBlockThreshold,
+  HarmCategory,
+  LiveServerMessage,
+  Modality,
+  Part,
+  Blob,
+  Content,
+} from '@google/genai';
+
 import { EventEmitter } from "eventemitter3";
 import { difference } from "lodash";
 import {
@@ -66,21 +79,19 @@ export type MultimodalLiveAPIClientConnection = {
  * If you dont want to use react you can still use this.
  */
 export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEventTypes> {
+  private _ai: GoogleGenAI;
+  private _session: any;
+
   public ws: WebSocket | null = null;
   protected config: LiveConfig | null = null;
   public url: string = "";
-  public getConfig() {
-    return { ...this.config };
-  }
 
-  constructor({ url, apiKey }: MultimodalLiveAPIClientConnection) {
+  constructor({ apiKey }: MultimodalLiveAPIClientConnection) {
     super();
-    url =
-      url ||
-      `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
-    url += `?key=${apiKey}`;
-    this.url = url;
-    this.send = this.send.bind(this);
+    this._ai = new GoogleGenAI({
+      apiKey: apiKey,
+      apiVersion: 'v1alpha',
+    });
   }
 
   log(type: string, message: StreamingLog["message"]) {
@@ -92,84 +103,43 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     this.emit("log", log);
   }
 
-  connect(config: LiveConfig): Promise<boolean> {
-    this.config = config;
-
-    const ws = new WebSocket(this.url);
-
-    ws.addEventListener("message", async (evt: MessageEvent) => {
-      if (evt.data instanceof Blob) {
-        this.receive(evt.data);
-      } else {
-        console.log("non blob message", evt);
-      }
-    });
-    return new Promise((resolve, reject) => {
-      const onError = (ev: Event) => {
-        this.disconnect(ws);
-        const message = `Could not connect to "${this.url}"`;
-        this.log(`server.${ev.type}`, message);
-        reject(new Error(message));
-      };
-      ws.addEventListener("error", onError);
-      ws.addEventListener("open", (ev: Event) => {
-        if (!this.config) {
-          reject("Invalid config sent to `connect(config)`");
-          return;
-        }
-        this.log(`client.${ev.type}`, `connected to socket`);
-        this.emit("open");
-
-        this.ws = ws;
-
-        const setupMessage: SetupMessage = {
-          setup: this.config,
-        };
-        this._sendDirect(setupMessage);
-        this.log("client.send", "setup");
-
-        ws.removeEventListener("error", onError);
-        ws.addEventListener("close", (ev: CloseEvent) => {
-          console.log(ev);
-          this.disconnect(ws);
-          let reason = ev.reason || "";
-          if (reason.toLowerCase().includes("error")) {
-            const prelude = "ERROR]";
-            const preludeIndex = reason.indexOf(prelude);
-            if (preludeIndex > 0) {
-              reason = reason.slice(
-                preludeIndex + prelude.length + 1,
-                Infinity,
-              );
-            }
-          }
-          this.log(
-            `server.${ev.type}`,
-            `disconnected ${reason ? `with reason: ${reason}` : ``}`,
-          );
-          this.emit("close", ev);
-        });
-        resolve(true);
+  async connect(config: LiveConfig): Promise<boolean> {
+    return new Promise(async (resolve, reject) => {
+      this._session = await this._ai.live.connect({
+        callbacks: {
+          onopen: () => {
+            this.log(`client.connect`, `connected`);
+            this.emit("open");
+            resolve(true);
+          },
+          onmessage: async (e: LiveServerMessage) => {
+            this.receive(e);
+          },
+          onerror: (e: ErrorEvent) => {
+            this.disconnect();
+            const message = `Could not connect to server: ${e.message}`;
+            this.log(`server.${e.type}`, message);
+            reject(new Error(message));
+          },
+          onclose: (ev: CloseEvent) => {
+            this.disconnect();
+            this.log(`server.${ev.type}`, `disconnected with reason: ${ev.reason}`);
+            this.emit("close", ev);
+            console.log(ev);
+          },
+        },
+        ...config
       });
     });
   }
 
-  disconnect(ws?: WebSocket) {
-    // could be that this is an old websocket and theres already a new instance
-    // only close it if its still the correct reference
-    if ((!ws || this.ws === ws) && this.ws) {
-      this.ws.close();
-      this.ws = null;
-      this.log("client.close", `Disconnected`);
-      return true;
-    }
-    return false;
+  disconnect() {
+    this._session?.close();
+    this._session = null;
+    this.log("client.close", `Disconnected`);
   }
 
-  protected async receive(blob: Blob) {
-    const response: LiveIncomingMessage = (await blobToJSON(
-      blob,
-    )) as LiveIncomingMessage;
+  protected async receive(response: LiveServerMessage) {
     if (isToolCallMessage(response)) {
       this.log("server.toolCall", response);
       this.emit("toolcall", response.toolCall);
@@ -207,7 +177,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
 
         // when its audio that is returned for modelTurn
         const audioParts = parts.filter(
-          (p) => p.inlineData && p.inlineData.mimeType.startsWith("audio/pcm"),
+          (p) => p.inlineData && p?.inlineData?.mimeType?.startsWith("audio/pcm"),
         );
         const base64s = audioParts.map((p) => p.inlineData?.data);
 
@@ -240,15 +210,15 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
   /**
    * send realtimeInput, this is base64 chunks of "audio/pcm" and/or "image/jpg"
    */
-  sendRealtimeInput(chunks: GenerativeContentBlob[]) {
+  sendRealtimeInput(chunks: Blob[]) {
     let hasAudio = false;
     let hasVideo = false;
     for (let i = 0; i < chunks.length; i++) {
       const ch = chunks[i];
-      if (ch.mimeType.includes("audio")) {
+      if (ch?.mimeType?.includes("audio")) {
         hasAudio = true;
       }
-      if (ch.mimeType.includes("image")) {
+      if (ch?.mimeType?.includes("image")) {
         hasVideo = true;
       }
       if (hasAudio && hasVideo) {
@@ -311,10 +281,10 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
    *  don't use directly unless trying to send an unsupported message type
    */
   _sendDirect(request: object) {
-    if (!this.ws) {
-      throw new Error("WebSocket is not connected");
+    if (!this._session) {
+      throw new Error("Client is not connected");
     }
     const str = JSON.stringify(request);
-    this.ws.send(str);
+    this._session.sendClientContent({ turns: str });
   }
 }

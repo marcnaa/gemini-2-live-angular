@@ -10,7 +10,7 @@ import { environment } from '../../src/environments/environment.development';
 import { AudioStreamer } from './audio-streamer'; 
 import VolMeterWorket from './worklet.vol-meter'; 
 import { audioContext } from './utils'; 
-import { GenerativeContentBlob } from '@google/generative-ai';
+import { Blob } from '@google/genai';
 
 
 type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
@@ -28,9 +28,9 @@ export class MultimodalLiveService implements OnDestroy {
   private toolSubject = new BehaviorSubject<ToolCallNullable>(null);
   tool$ = this.toolSubject.asObservable();
   public config : LiveConfig = {
-    model: "models/gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-exp",
     generationConfig: {
-      // responseModalities: "text",
+      //responseModalities: "text",
       responseModalities: "audio", // note "audio" doesn't send a text response over
       speechConfig: {
         voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
@@ -54,11 +54,9 @@ export class MultimodalLiveService implements OnDestroy {
   private destroy$ = new Subject<void>(); // For unsubscribing
 
   constructor() {
-    const connectionParams: MultimodalLiveAPIClientConnection = {
-      url: environment.WS_URL,
+    this.wsClient = new MultimodalLiveClient({
       apiKey: environment.API_KEY,
-    };
-    this.wsClient = new MultimodalLiveClient(connectionParams);
+    });
     this.initializeAudioStreamer();
     this.setupEventListeners();
   }
@@ -159,7 +157,7 @@ export class MultimodalLiveService implements OnDestroy {
     this.wsClient.sendToolResponse(message);
   }
 
-  async sendRealtimeInput(chunks: GenerativeContentBlob[]): Promise<any> {
+  async sendRealtimeInput(chunks: Blob[]): Promise<any> {
     this.wsClient.sendRealtimeInput(chunks);
   }
 

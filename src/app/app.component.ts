@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MultimodalLiveService } from '../gemini/gemini-client.service';
 import { Subscription } from 'rxjs';
-import { Part, SchemaType } from '@google/generative-ai';
+import { Part, Type } from '@google/genai';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LiveConfig, ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
@@ -96,8 +96,10 @@ export class AppComponent implements OnInit, OnDestroy {
         const id = toolCall.functionCalls?.[0].id;
         if (call) {
           // Call the actual function
-          if (call.name === "getCurrentWeather") {
-            const callResponse = functions[call.name](call.args as WeatherParams);
+          if (call.name === "getCurrentWeather" && call.args) {
+            // Remember to add additional checks for the function name and parameters
+            const { location, unit } = call.args as { location: string, unit: string };
+            const callResponse = functions[call.name]({ location, unit });
             // Send the API response back to the model
             this.multimodalLiveService.sendToolResponse({
               functionResponses: [{
@@ -127,14 +129,14 @@ export class AppComponent implements OnInit, OnDestroy {
       name: "getCurrentWeather",
       description: "Get the current weather in a given location",
       parameters: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
           location: {
-            type: SchemaType.STRING,
+            type: Type.STRING,
             description: "The city and state, e.g. San Francisco, CA",
           },
           unit: {
-            type: SchemaType.STRING,
+            type: Type.STRING,
             enum: ["celsius", "fahrenheit"],
             description: "The temperature unit to use. Infer this from the users location.",
           },
@@ -144,7 +146,7 @@ export class AppComponent implements OnInit, OnDestroy {
     };
     
     let config : LiveConfig = {
-      model: "models/gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash-exp",
       generationConfig: {
         // responseModalities: "text",
         responseModalities: "audio", // note "audio" doesn't send a text response over
