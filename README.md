@@ -3,11 +3,12 @@
 ## Overview
 This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
 
-This project demonstrates integration with Google's Gemini AI models through the `@google/genai` library.
+This project demonstrates integration with Google's Gemini AI models through the `@google/genai` library now in (Technical) [Preview](https://github.com/googleapis/js-genai/commit/da38b6df88705c8ff1ea9a2e1c5ffa596054b382).
 
-> This project started as a migration to Angular of the [Multimodal Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console) as is only available in React at the moment. The Gemini Live API is subject to change as there is currently no official client or SDK available for JavaScript.
+> This project started as a migration to Angular of the [Multimodal Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console) as is only available in React at the moment.
 
 ## Core Features
+- Official TypeScript SDK for Gemini 2.0 API
 - Real-time streaming voice from and to Gemini 2.0 API
 - Real-time streaming video from webcam or screen to Gemini 2.0 API
 - Natural language text generation
@@ -56,7 +57,6 @@ Project Astra is a research initiative aimed at developing a universal AI assist
    Create `environment.development.ts` in `src/environments/` with:
    ```typescript
    export const environment = {
-     WS_URL: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent',
      API_KEY: 'YOUR_GOOGLE_AI_API_KEY',
    };
    ```
@@ -92,18 +92,15 @@ Test the various capabilities using these example prompts:
 The main configuration is handled in `src/app.component`. You can toggle between audio and text modalities:
 
 ```typescript
-let config: LiveConfig = {
-  model: "models/gemini-2.0-flash-exp",
-  generationConfig: {
-    // For text responses in chat window
-    responseModalities: "text",
-    
-    // For audio responses (uncomment to enable)
-    // responseModalities: "audio",
-    // speechConfig: {
-    //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
-    // },
-  },
+let config: LiveConnectConfig = {
+   // For text responses in chat window
+   responseModalities: [Modality.TEXT], // note "audio" doesn't send a text response over
+   
+   // For audio responses (uncomment to enable)
+   // responseModalities: [Modality.AUDIO],
+   // speechConfig: {
+   //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+   // },
 }
 ```
 
