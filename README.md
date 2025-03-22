@@ -143,7 +143,7 @@ Access the application at `http://localhost:4200/`
      Note: Select and install your preferred E2E testing framework
 
 ## Project Information
-- Built with Angular CLI version 19.1.6
+- Built with Angular CLI version 19.2.3
 - Features automatic reload during development
 - Includes production build optimizations
 
