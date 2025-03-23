@@ -158,9 +158,7 @@ export class MultimodalLiveService implements OnDestroy {
   private async addAudioData(data: ArrayBuffer): Promise<void> {
     if (this.audioStreamer) {
       this.audioStreamer.addPCM16(new Uint8Array(data));
-      if (this.geminiTranscribeService?.isStreaming) {
-        this.geminiTranscribeService.sendAudioData(new Uint8Array(data));
-      }
+      this.geminiTranscribeService.sendAudioData(new Uint8Array(data));
     }
   }
   
