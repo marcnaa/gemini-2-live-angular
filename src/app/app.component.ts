@@ -12,6 +12,11 @@ type ChatMessage = {
   text: string;
 }
 
+interface TranscriptionFragment {
+  transcript: string;
+  source: string; // user or model
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -29,7 +34,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private connectedSubscription: Subscription | undefined;
   private contentSubscription: Subscription | undefined;
   private toolSubscription: Subscription | undefined;
-
+  private transcriptionSubscription: Subscription | undefined;
 
   chatForm = new FormGroup({
     message: new FormControl('Write a poem.'),
@@ -109,6 +114,28 @@ export class AppComponent implements OnInit, OnDestroy {
             });
           }
         }
+      },
+    );
+
+    // this.transcriptionSubscription = this.multimodalLiveService.microphoneTranscribeService.stream$.subscribe(
+    //   (fragment: TranscriptionFragment | null) => {
+    //     if (!fragment) return;
+    //     console.log('Transcription fragment received:', fragment);
+    //     this.messages.push({
+    //       role: fragment.source,
+    //       text: fragment.transcript
+    //     });
+    //   },
+    // );
+
+    this.transcriptionSubscription = this.multimodalLiveService.geminiTranscribeService.stream$.subscribe(
+      (fragment: TranscriptionFragment | null) => {
+        if (!fragment) return;
+        console.log('Transcription fragment received:', fragment);
+        this.messages.push({
+          role: fragment.source,
+          text: fragment.transcript
+        });
       },
     );
   }

@@ -11,7 +11,7 @@ import { AudioStreamer } from './audio-streamer';
 import VolMeterWorket from './worklet.vol-meter'; 
 import { audioContext } from './utils'; 
 import { Blob, LiveConnectConfig, Modality, Type } from '@google/genai';
-
+import { TranscribeService } from './transcribe.service';
 
 type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
 type ToolCallNullable = ToolCall | null;
@@ -52,10 +52,8 @@ export class MultimodalLiveService implements OnDestroy {
   };
     
   public config: LiveConnectConfig = {
-    //model: "gemini-2.0-flash-exp",
-
     // responseModalities: [Modality.TEXT],
-    responseModalities: [Modality.TEXT], // note "audio" doesn't send a text response over
+    responseModalities: [Modality.AUDIO], // note "audio" doesn't send a text response over
     // speechConfig: {
     //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
     // },
@@ -83,11 +81,15 @@ export class MultimodalLiveService implements OnDestroy {
   private volumeSubject = new BehaviorSubject<number>(0);
   volume$ = this.volumeSubject.asObservable();
   private destroy$ = new Subject<void>(); // For unsubscribing
+  //public microphoneTranscribeService: TranscribeService;
+  public geminiTranscribeService: TranscribeService;
 
   constructor() {
     this.wsClient = new MultimodalLiveClient({
       apiKey: environment.API_KEY,
     });
+    //this.microphoneTranscribeService = new TranscribeService(16000, 'user');
+    this.geminiTranscribeService = new TranscribeService(24000, 'model');
     this.initializeAudioStreamer();
     this.setupEventListeners();
   }
@@ -153,16 +155,21 @@ export class MultimodalLiveService implements OnDestroy {
     }
   }
 
-  private addAudioData(data: ArrayBuffer): void {
+  private async addAudioData(data: ArrayBuffer): Promise<void> {
     if (this.audioStreamer) {
       this.audioStreamer.addPCM16(new Uint8Array(data));
+      if (this.geminiTranscribeService?.isStreaming) {
+        this.geminiTranscribeService.sendAudioData(new Uint8Array(data));
+      }
     }
   }
   
   async connect(): Promise<void> {
     this.wsClient.disconnect();
+    this.geminiTranscribeService.stop();
     try {
       await this.wsClient.connect(this.config);
+      this.geminiTranscribeService.start();
       this.setConnected(true);
     } catch (error) {
       console.error('Connection error:', error);
@@ -173,7 +180,9 @@ export class MultimodalLiveService implements OnDestroy {
 
   disconnect(): void {
     this.wsClient.disconnect();
+    this.geminiTranscribeService.stop();
     this.stopAudioStreamer(); // Stop audio on disconnect
+    //this.microphoneTranscribeService.stop();
     this.setConnected(false);
   }
 

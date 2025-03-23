@@ -69,7 +69,10 @@ export class AudioRecorder extends EventEmitter {
 
         if (arrayBuffer) {
           const arrayBufferString = arrayBufferToBase64(arrayBuffer);
-          this.emit("data", arrayBufferString);
+          this.emit("data", {
+            arrayBufferString,
+            data: ev.data,
+          });
         }
       };
       this.source.connect(this.recordingWorklet);

@@ -104,7 +104,6 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
   }
 
   async connect(config: LiveConnectConfig): Promise<boolean> {
-    debugger;
     return new Promise(async (resolve, reject) => {
       this._session = await this._ai.live.connect({
         model: "gemini-2.0-flash-exp",
