@@ -117,16 +117,16 @@ export class AppComponent implements OnInit, OnDestroy {
       },
     );
 
-    // this.transcriptionSubscription = this.multimodalLiveService.microphoneTranscribeService.stream$.subscribe(
-    //   (fragment: TranscriptionFragment | null) => {
-    //     if (!fragment) return;
-    //     console.log('Transcription fragment received:', fragment);
-    //     this.messages.push({
-    //       role: fragment.source,
-    //       text: fragment.transcript
-    //     });
-    //   },
-    // );
+    this.transcriptionSubscription = this.multimodalLiveService.microphoneTranscribeService.stream$.subscribe(
+      (fragment: TranscriptionFragment | null) => {
+        if (!fragment) return;
+        console.log('Transcription fragment received:', fragment);
+        this.messages.push({
+          role: fragment.source,
+          text: fragment.transcript
+        });
+      },
+    );
 
     this.transcriptionSubscription = this.multimodalLiveService.geminiTranscribeService.stream$.subscribe(
       (fragment: TranscriptionFragment | null) => {

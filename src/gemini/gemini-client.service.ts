@@ -1,7 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import {
-  MultimodalLiveAPIClientConnection,
   MultimodalLiveClient,
 } from './ws-client';
 import { Interrupted, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
@@ -81,14 +80,14 @@ export class MultimodalLiveService implements OnDestroy {
   private volumeSubject = new BehaviorSubject<number>(0);
   volume$ = this.volumeSubject.asObservable();
   private destroy$ = new Subject<void>(); // For unsubscribing
-  //public microphoneTranscribeService: TranscribeService;
+  public microphoneTranscribeService: TranscribeService;
   public geminiTranscribeService: TranscribeService;
 
   constructor() {
     this.wsClient = new MultimodalLiveClient({
       apiKey: environment.API_KEY,
     });
-    //this.microphoneTranscribeService = new TranscribeService(16000, 'user');
+    this.microphoneTranscribeService = new TranscribeService(16000, 'user');
     this.geminiTranscribeService = new TranscribeService(24000, 'model');
     this.initializeAudioStreamer();
     this.setupEventListeners();
@@ -155,7 +154,7 @@ export class MultimodalLiveService implements OnDestroy {
     }
   }
 
-  private async addAudioData(data: ArrayBuffer): Promise<void> {
+  private addAudioData(data: ArrayBuffer): void {
     if (this.audioStreamer) {
       this.audioStreamer.addPCM16(new Uint8Array(data));
       this.geminiTranscribeService.sendAudioData(new Uint8Array(data));
@@ -180,7 +179,7 @@ export class MultimodalLiveService implements OnDestroy {
     this.wsClient.disconnect();
     this.geminiTranscribeService.stop();
     this.stopAudioStreamer(); // Stop audio on disconnect
-    //this.microphoneTranscribeService.stop();
+    this.microphoneTranscribeService.stop();
     this.setConnected(false);
   }
 
@@ -188,14 +187,14 @@ export class MultimodalLiveService implements OnDestroy {
     this.connectedSubject.next(connected);
   }
 
-  async send(message: any): Promise<any> {
+  send(message: any): any {
     this.wsClient.send(message);
   }
-  async sendToolResponse(message: any): Promise<any> {
+  sendToolResponse(message: any): any {
     this.wsClient.sendToolResponse(message);
   }
 
-  async sendRealtimeInput(chunks: Blob[]): Promise<any> {
+  sendRealtimeInput(chunks: Blob[]): any {
     this.wsClient.sendRealtimeInput(chunks);
   }
 

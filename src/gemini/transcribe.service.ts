@@ -33,6 +33,9 @@ export class TranscribeService implements OnDestroy {
     @Inject('sampleRate') private sampleRate: number,
     @Inject('source') private source: string,
   ) { 
+    this.sampleRate = sampleRate;
+    this.source = source;
+
     this.stream$.pipe(takeUntil(this.ngUnsubscribe)).subscribe();
 
     // Buffer incoming transcripts for 2s and combine them
@@ -123,8 +126,8 @@ export class TranscribeService implements OnDestroy {
     }
   }
 
-  async sendAudioData(data: ArrayBuffer): Promise<void> {
-    if (!this.socket?.isConnected()) return;
+  sendAudioData(data: ArrayBuffer): void {
+    //if (!this.socket?.isConnected()) return;
     this.socket?.send(data);
   }
 }

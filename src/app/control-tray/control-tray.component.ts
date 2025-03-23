@@ -135,18 +135,17 @@ export class ControlTrayComponent
 
   async handleAudioRecording() {
     if (this.isConnected && !this.muted) {
-      //await this.multimodalLiveService.microphoneTranscribeService.start();
+      await this.multimodalLiveService.microphoneTranscribeService.start();
 
       this.audioRecorder
-        .on('data', async (event) => {
+        .on('data', (event) => {
           this.multimodalLiveService.sendRealtimeInput([{
             mimeType: 'audio/pcm;rate=16000',
             data: event.arrayBufferString,
           }]);
-          // let transcribeService = this.multimodalLiveService.microphoneTranscribeService;
-          // if (transcribeService?.isStreaming) {
-          //   transcribeService.sendAudioData(event.data);
-          // }
+          let transcribeService = this.multimodalLiveService.microphoneTranscribeService;
+          transcribeService?.sendAudioData(event.data);
+          
           //console.log(`[Audio]: Stream going out`, base64);
         })
         .on('volume', (volume: number) => {
@@ -155,7 +154,7 @@ export class ControlTrayComponent
         .start();
     } else {
       this.audioRecorder.stop();
-      //this.multimodalLiveService.microphoneTranscribeService.stop();
+      this.multimodalLiveService.microphoneTranscribeService.stop();
     }
   }
 

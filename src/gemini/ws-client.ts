@@ -27,6 +27,7 @@ import {
   Blob,
   Content,
   LiveConnectConfig,
+  Session,
 } from '@google/genai';
 
 import { EventEmitter } from "eventemitter3";
@@ -80,7 +81,7 @@ export type MultimodalLiveAPIClientConnection = {
  */
 export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEventTypes> {
   private _ai: GoogleGenAI;
-  private _session: any;
+  private _session: Session | null = null;
 
   public ws: WebSocket | null = null;
   protected config: LiveConnectConfig | null = null;
@@ -217,32 +218,19 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     let hasAudio = false;
     let hasVideo = false;
     for (let i = 0; i < chunks.length; i++) {
-      const ch = chunks[i];
-      if (ch?.mimeType?.includes("audio")) {
+      const chunk = chunks[i];
+      if (chunk?.mimeType?.includes("audio")) {
         hasAudio = true;
       }
-      if (ch?.mimeType?.includes("image")) {
+      if (chunk?.mimeType?.includes("image")) {
         hasVideo = true;
       }
       if (hasAudio && hasVideo) {
         break;
       }
+      this._session?.sendRealtimeInput({ media: chunk });
     }
-    const message =
-      hasAudio && hasVideo
-        ? "audio + video"
-        : hasAudio
-          ? "audio"
-          : hasVideo
-            ? "video"
-            : "unknown";
-
-    const data: RealtimeInputMessage = {
-      realtimeInput: {
-        mediaChunks: chunks,
-      },
-    };
-    this._sendDirect(data);
+    const message = hasAudio && hasVideo ? "audio + video": (hasAudio ? "audio" : hasVideo ? "video" : "unknown");
     this.log(`client.realtimeInput`, message);
   }
 
