@@ -71,7 +71,7 @@ export class AudioRecorder extends EventEmitter {
           const arrayBufferString = arrayBufferToBase64(arrayBuffer);
           this.emit("data", {
             arrayBufferString: arrayBufferString,
-            data: ev.data,
+            data: arrayBuffer,
           });
         }
       };
