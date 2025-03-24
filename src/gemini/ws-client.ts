@@ -28,6 +28,9 @@ import {
   Content,
   LiveConnectConfig,
   Session,
+  FunctionResponse,
+  LiveSendToolResponseParameters,
+  LiveSendClientContentParameters,
 } from '@google/genai';
 
 import { EventEmitter } from "eventemitter3";
@@ -41,6 +44,7 @@ import {
   isToolCallCancellationMessage,
   isToolCallMessage,
   isTurnComplete,
+  LiveFunctionResponse,
   LiveIncomingMessage,
   ModelTurn,
   RealtimeInputMessage,
@@ -238,12 +242,10 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
    *  send a response to a function call and provide the id of the functions you are responding to
    */
   sendToolResponse(toolResponse: ToolResponseMessage["toolResponse"]) {
-    const message: ToolResponseMessage = {
-      toolResponse,
-    };
-
-    this._sendDirect(message);
+    const message: ToolResponseMessage = { toolResponse };
     this.log(`client.toolResponse`, message);
+    
+    this._session?.sendToolResponse(toolResponse as LiveSendToolResponseParameters);
   }
 
   /**
@@ -262,20 +264,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         turnComplete,
       },
     };
-
-    this._sendDirect(clientContentRequest);
     this.log(`client.send`, clientContentRequest);
-  }
-
-  /**
-   *  used internally to send all messages
-   *  don't use directly unless trying to send an unsupported message type
-   */
-  _sendDirect(request: object) {
-    if (!this._session) {
-      throw new Error("Client is not connected");
-    }
-    const str = JSON.stringify(request);
-    this._session.sendClientContent({ turns: str });
+    this._session?.sendClientContent(clientContentRequest.clientContent as LiveSendClientContentParameters);
   }
 }
