@@ -11,6 +11,9 @@ import {
   LiveSendToolResponseParameters,
   LiveSendClientContentParameters,
   LiveServerMessage,
+  createPartFromText,
+  createUserContent,
+  PartListUnion,
 } from '@google/genai';
 
 import { EventEmitter } from "eventemitter3";
@@ -48,9 +51,6 @@ import { TranscribeService } from './transcribe.service';
 export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEventTypes> implements OnDestroy {
   private _ai: GoogleGenAI;
   private _session: Session | null = null;
-
-  public ws: WebSocket | null = null;
-  public url: string = "";
 
   private connectedSubject = new BehaviorSubject<boolean>(false);
   connected$ = this.connectedSubject.asObservable();
@@ -100,9 +100,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
     },
     systemInstruction: {
       parts: [
-        {
-          text: 'You are a helpful assistant.',
-        },
+        createPartFromText('You are a helpful assistant.'),
       ],
     },
     tools: [
@@ -162,7 +160,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
 
   private setupEventListeners(): void {
     this.on('open', () => {
-      console.log('WS connection opened');
+      console.log('Gemini API: connection opened');
       this.setConnected(true);
       this.geminiTranscribeService.start();
     })
@@ -180,7 +178,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
       })
 
       .on('close', (e: CloseEvent) => {
-        console.log('WS connection closed', e);
+        console.log('Gemini API: connection closed', e);
         this.setConnected(false);
         this.disconnect();
       })
@@ -344,12 +342,8 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   /**
    * send normal content parts such as { text }
    */
-  send(parts: Part | Part[], turnComplete: boolean = true) {
-    parts = Array.isArray(parts) ? parts : [parts];
-    const content: Content = {
-      role: "user",
-      parts,
-    };
+  send(parts: PartListUnion, turnComplete: boolean = true) {
+    const content: Content = createUserContent(parts);
 
     const clientContentRequest: ClientContentMessage = {
       clientContent: {
