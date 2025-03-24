@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MultimodalLiveService } from '../gemini/gemini-client.service';
 import { Subscription } from 'rxjs';
-import { Part, Type, LiveConnectConfig, Modality, FunctionResponse, createPartFromFunctionResponse } from '@google/genai';
+import { Part, Type, LiveConnectConfig, Modality, FunctionResponse } from '@google/genai';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
@@ -107,11 +107,11 @@ export class AppComponent implements OnInit, OnDestroy {
             const callResponse = functions[call.name]({ location, unit }) as Record<string, string>;
             // Send the API response back to the model
             this.multimodalLiveService.sendToolResponse({
-              functionResponses: createPartFromFunctionResponse(
-                id, 
-                call.name, 
-                callResponse
-              ),
+              functionResponses: {
+                id,
+                name: call.name,
+                response: callResponse,
+              } as FunctionResponse,
             } as any);
           }
         }
