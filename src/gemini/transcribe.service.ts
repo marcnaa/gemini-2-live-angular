@@ -90,6 +90,7 @@ export class TranscribeService implements OnDestroy {
 
         this.socket?.on(LiveTranscriptionEvents.Transcript, (data) => {
           const transcript = data.channel.alternatives[0].transcript;
+          if (transcript.length === 0) return;
           this.rawStreamSubject.next({
             transcript: transcript, 
             source: this.source
