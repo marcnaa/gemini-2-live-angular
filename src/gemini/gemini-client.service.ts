@@ -1,31 +1,70 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import {
-  MultimodalLiveClient,
-} from './ws-client';
-import { Interrupted, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
+  GoogleGenAI,
+  Type,
+  Part,
+  Blob,
+  Content,
+  LiveConnectConfig,
+  Session,
+  LiveSendToolResponseParameters,
+  LiveSendClientContentParameters,
+  LiveServerMessage,
+} from '@google/genai';
+
+import { EventEmitter } from "eventemitter3";
+import { difference } from "lodash";
+
+import {
+  ClientContentMessage, isInterrupted,
+  isModelTurn,
+  isServerContentMessage,
+  isSetupCompleteMessage,
+  isToolCallCancellationMessage,
+  isToolCallMessage,
+  isTurnComplete,
+  LiveIncomingMessage,
+  ModelTurn, MultimodalLiveClientEventTypes, RealtimeInputMessage,
+  ServerContent, ServerContentNullable, SetupMessage,
+  StreamingLog, ToolCallNullable, ToolResponseMessage
+} from './types';
 import { environment } from '../../src/environments/environment.development';
 
-import { AudioStreamer } from './audio-streamer'; 
-import VolMeterWorket from './worklet.vol-meter'; 
-import { audioContext } from './utils'; 
-import { Blob, LiveConnectConfig, Modality, Type } from '@google/genai';
+import { AudioStreamer } from './audio-streamer';
+import VolMeterWorket from './worklet.vol-meter';
+import { audioContext, blobToJSON, base64ToArrayBuffer } from './utils';
+import { Modality } from '@google/genai';
 import { TranscribeService } from './transcribe.service';
 
-type ServerContentNullable = ModelTurn | TurnComplete | Interrupted | null;
-type ToolCallNullable = ToolCall | null;
-
+/**
+ * A event-emitting class that manages the connection to the websocket and emits
+ * events to the rest of the application.
+ * If you dont want to use react you can still use this.
+ */
 @Injectable({
   providedIn: 'root',
 })
-export class MultimodalLiveService implements OnDestroy {
-  public wsClient: MultimodalLiveClient;
+export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEventTypes> implements OnDestroy {
+  private _ai: GoogleGenAI;
+  private _session: Session | null = null;
+
+  public ws: WebSocket | null = null;
+  public url: string = "";
+
   private connectedSubject = new BehaviorSubject<boolean>(false);
   connected$ = this.connectedSubject.asObservable();
   private contentSubject = new BehaviorSubject<ServerContentNullable>(null);
   content$ = this.contentSubject.asObservable();
   private toolSubject = new BehaviorSubject<ToolCallNullable>(null);
   tool$ = this.toolSubject.asObservable();
+
+  private audioStreamer: AudioStreamer | null = null;
+  private volumeSubject = new BehaviorSubject<number>(0);
+  volume$ = this.volumeSubject.asObservable();
+  private destroy$ = new Subject<void>(); // For unsubscribing
+  public microphoneTranscribeService: TranscribeService;
+  public geminiTranscribeService: TranscribeService;
 
   // function calling setup
   // Define the function to be called.
@@ -49,7 +88,7 @@ export class MultimodalLiveService implements OnDestroy {
       required: ["location", "unit"],
     },
   };
-    
+
   public config: LiveConnectConfig = {
     // responseModalities: [Modality.TEXT],
     responseModalities: [Modality.AUDIO], // note "audio" doesn't send a text response over
@@ -76,21 +115,26 @@ export class MultimodalLiveService implements OnDestroy {
       },
     ],
   };
-  private audioStreamer: AudioStreamer | null = null;
-  private volumeSubject = new BehaviorSubject<number>(0);
-  volume$ = this.volumeSubject.asObservable();
-  private destroy$ = new Subject<void>(); // For unsubscribing
-  public microphoneTranscribeService: TranscribeService;
-  public geminiTranscribeService: TranscribeService;
 
   constructor() {
-    this.wsClient = new MultimodalLiveClient({
+    super();
+    this._ai = new GoogleGenAI({
       apiKey: environment.API_KEY,
+      apiVersion: 'v1alpha',
     });
     this.microphoneTranscribeService = new TranscribeService(16000, 'user');
     this.geminiTranscribeService = new TranscribeService(24000, 'model');
     this.initializeAudioStreamer();
     this.setupEventListeners();
+  }
+
+  log(type: string, message: StreamingLog["message"]) {
+    const log: StreamingLog = {
+      date: new Date(),
+      type,
+      message,
+    };
+    this.emit("log", log);
   }
 
   ngOnDestroy(): void {
@@ -117,10 +161,11 @@ export class MultimodalLiveService implements OnDestroy {
   }
 
   private setupEventListeners(): void {
-    this.wsClient
-      .on('open', () => {
-        console.log('WS connection opened');
-      })
+    this.on('open', () => {
+      console.log('WS connection opened');
+      this.setConnected(true);
+      this.geminiTranscribeService.start();
+    })
 
       .on('log', (log: StreamingLog) => {
         console.log(log);
@@ -137,21 +182,187 @@ export class MultimodalLiveService implements OnDestroy {
       .on('close', (e: CloseEvent) => {
         console.log('WS connection closed', e);
         this.setConnected(false);
-      });
-    
-    // audio event listeners
-    this.wsClient
+        this.disconnect();
+      })
+      // audio event listeners
       .on('interrupted', () => {
-      this.stopAudioStreamer() })
+        this.stopAudioStreamer()
+      })
       .on('audio', (data: ArrayBuffer) => {
-      this.addAudioData(data);
+        this.addAudioData(data);
+      });
+  }
+
+  async connect(): Promise<boolean> {
+    this._session?.close(); // Close any existing session
+    this._session = null;
+    this.geminiTranscribeService.stop();
+
+    return new Promise(async (resolve, reject) => {
+      this._session = await this._ai.live.connect({
+        model: "gemini-2.0-flash-exp",
+        callbacks: {
+          onopen: () => {
+            this.log(`client.connect`, `connected`);
+            this.emit("open");
+            resolve(true);
+          },
+          onmessage: async (e: LiveServerMessage) => {
+            this.receive(e);
+          },
+          onerror: (e: ErrorEvent) => {
+            this.disconnect();
+            const message = `Could not connect to server: ${e.message}`;
+            this.log(`server.${e.type}`, message);
+            reject(new Error(message));
+          },
+          onclose: (ev: CloseEvent) => {
+            this.disconnect();
+            this.log(`server.${ev.type}`, `disconnected with reason: ${ev.reason}`);
+            this.emit("close", ev);
+            console.log(ev);
+          },
+        },
+        config: {
+          ...this.config
+        },
+      });
     });
   }
 
-  private stopAudioStreamer(): void {
-    if (this.audioStreamer) {
-      this.audioStreamer.stop();
+  disconnect() {
+    this._session?.close();
+    this._session = null;
+    this.log("client.close", `Disconnected`);
+    this.stopAudioStreamer(); // Stop audio on disconnect
+    this.microphoneTranscribeService.stop();
+    this.geminiTranscribeService.stop();
+    this.setConnected(false);
+  }
+
+  protected async receive(response: LiveServerMessage) {
+    if (isToolCallMessage(response)) {
+      this.log("server.toolCall", response);
+      this.emit("toolcall", response.toolCall);
+      return;
     }
+    if (isToolCallCancellationMessage(response)) {
+      this.log("receive.toolCallCancellation", response);
+      this.emit("toolcallcancellation", response.toolCallCancellation);
+      return;
+    }
+
+    if (isSetupCompleteMessage(response)) {
+      this.log("server.send", "setupComplete");
+      this.emit("setupcomplete");
+      return;
+    }
+
+    // this json also might be `contentUpdate { interrupted: true }`
+    // or contentUpdate { end_of_turn: true }
+    if (isServerContentMessage(response)) {
+      const { serverContent } = response;
+      if (isInterrupted(serverContent)) {
+        this.log("receive.serverContent", "interrupted");
+        this.emit("interrupted");
+        return;
+      }
+      if (isTurnComplete(serverContent)) {
+        this.log("server.send", "turnComplete");
+        this.emit("turncomplete");
+        //plausible theres more to the message, continue
+      }
+
+      if (isModelTurn(serverContent)) {
+        let parts: Part[] = serverContent.modelTurn.parts;
+
+        // when its audio that is returned for modelTurn
+        const audioParts = parts.filter(
+          (p) => p.inlineData && p?.inlineData?.mimeType?.startsWith("audio/pcm"),
+        );
+        const base64s = audioParts.map((p) => p.inlineData?.data);
+
+        // strip the audio parts out of the modelTurn
+        const otherParts = difference(parts, audioParts);
+        // console.log("otherParts", otherParts);
+
+        base64s.forEach((b64) => {
+          if (b64) {
+            const data = base64ToArrayBuffer(b64);
+            this.emit("audio", data);
+            this.log(`server.audio`, `buffer (${data.byteLength})`);
+          }
+        });
+        if (!otherParts.length) {
+          return;
+        }
+
+        parts = otherParts;
+
+        const content: ModelTurn = { modelTurn: { parts } };
+        this.emit("content", content);
+        this.log(`server.content`, response);
+      }
+    } else {
+      console.log("received unmatched message", response);
+    }
+  }
+
+  /**
+   * send realtimeInput, this is base64 chunks of "audio/pcm" and/or "image/jpg"
+   */
+  sendRealtimeInput(chunks: Blob[]) {
+    let hasAudio = false;
+    let hasVideo = false;
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      if (chunk?.mimeType?.includes("audio")) {
+        hasAudio = true;
+      }
+      if (chunk?.mimeType?.includes("image")) {
+        hasVideo = true;
+      }
+      if (hasAudio && hasVideo) {
+        break;
+      }
+      this._session?.sendRealtimeInput({ media: chunk });
+    }
+    const message = hasAudio && hasVideo ? "audio + video" : (hasAudio ? "audio" : hasVideo ? "video" : "unknown");
+    this.log(`client.realtimeInput`, message);
+  }
+
+  /**
+   * send a response to a function call and provide the id of the functions you are responding to
+   */
+  sendToolResponse(toolResponse: ToolResponseMessage["toolResponse"]) {
+    const message: ToolResponseMessage = { toolResponse };
+    this.log(`client.toolResponse`, message);
+
+    this._session?.sendToolResponse(toolResponse as LiveSendToolResponseParameters);
+  }
+
+  /**
+   * send normal content parts such as { text }
+   */
+  send(parts: Part | Part[], turnComplete: boolean = true) {
+    parts = Array.isArray(parts) ? parts : [parts];
+    const content: Content = {
+      role: "user",
+      parts,
+    };
+
+    const clientContentRequest: ClientContentMessage = {
+      clientContent: {
+        turns: [content],
+        turnComplete,
+      },
+    };
+    this.log(`client.send`, clientContentRequest);
+    this._session?.sendClientContent(clientContentRequest.clientContent as LiveSendClientContentParameters);
+  }
+
+  private setConnected(connected: boolean): void {
+    this.connectedSubject.next(connected);
   }
 
   private addAudioData(data: ArrayBuffer): void {
@@ -160,42 +371,11 @@ export class MultimodalLiveService implements OnDestroy {
       this.geminiTranscribeService.sendAudioData(new Uint8Array(data));
     }
   }
-  
-  async connect(): Promise<void> {
-    this.wsClient.disconnect();
-    this.geminiTranscribeService.stop();
-    try {
-      await this.wsClient.connect(this.config);
-      this.geminiTranscribeService.start();
-      this.setConnected(true);
-    } catch (error) {
-      console.error('Connection error:', error);
-      this.setConnected(false); // Ensure state is updated on error
-      throw error; // Re-throw to allow component to handle
+
+  private stopAudioStreamer(): void {
+    if (this.audioStreamer) {
+      this.audioStreamer.stop();
     }
-  }
-
-  disconnect(): void {
-    this.wsClient.disconnect();
-    this.geminiTranscribeService.stop();
-    this.stopAudioStreamer(); // Stop audio on disconnect
-    this.microphoneTranscribeService.stop();
-    this.setConnected(false);
-  }
-
-  private setConnected(connected: boolean): void {
-    this.connectedSubject.next(connected);
-  }
-
-  send(message: any): any {
-    this.wsClient.send(message);
-  }
-  sendToolResponse(message: any): any {
-    this.wsClient.sendToolResponse(message);
-  }
-
-  sendRealtimeInput(chunks: Blob[]): any {
-    this.wsClient.sendRealtimeInput(chunks);
   }
 
 }

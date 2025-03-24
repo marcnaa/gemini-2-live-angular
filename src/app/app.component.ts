@@ -112,7 +112,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 name: call.name,
                 response: callResponse,
               } as FunctionResponse
-            });
+            } as any);
           }
         }
       },
