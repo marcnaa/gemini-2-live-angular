@@ -5,10 +5,11 @@ This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web 
 
 This project demonstrates integration with Google's Gemini AI models through the `@google/genai` library now in (Technical) [Preview](https://github.com/googleapis/js-genai/commit/da38b6df88705c8ff1ea9a2e1c5ffa596054b382).
 
-> This project started as a migration to Angular of the [Multimodal Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console) as is only available in React at the moment.
+> This project started as a migration to Angular of the [Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console) as is only available in React at the moment.
 
 ## Core Features
-- Official TypeScript GenAI SDK for Gemini 2.0 API
+- Starter kit based on [Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console)
+- TypeScript GenAI SDK for Gemini 2.0 API
 - Real-time streaming voice from and to Gemini 2.0 API
 - Real-time streaming video from webcam or screen to Gemini 2.0 API
 - Natural language text generation
@@ -149,6 +150,7 @@ Access the application at `http://localhost:4200/`
 
 ## Project Information
 - Built with Angular CLI version 19.2.3
+- Logging state management including Dev Tools with NgRx version 19.0.1
 - TypeScript GenAI SDK version 0.6.1
 - Features automatic reload during development
 - Includes production build optimizations
