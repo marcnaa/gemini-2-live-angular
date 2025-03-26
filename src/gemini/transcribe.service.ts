@@ -2,6 +2,7 @@ import { Inject, Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, takeUntil, bufferTime, filter } from 'rxjs';
 import { environment } from '../../src/environments/environment.development';
 import { createClient, ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
+import { reject } from 'lodash';
 
 interface TranscribeStreamResult {
   isStreaming: Observable<boolean>;
@@ -25,35 +26,40 @@ export class TranscribeService implements OnDestroy {
   isStreaming$ = this.isStreamingSubject.asObservable();
   private ngUnsubscribe = new Subject<void>();
 
-  private _deepgram = createClient(environment.DEEPGRAM_API_KEY);
-  private socket: ListenLiveClient | null = null;
+  private _deepgram;
+  private isDeepgramAvailable = () => environment.DEEPGRAM_API_KEY.length>0;
+  private socket: ListenLiveClient | undefined = undefined;
   private interval: any;
 
   constructor(
     @Inject('sampleRate') private sampleRate: number,
     @Inject('source') private source: string,
   ) { 
+    if (this.isDeepgramAvailable()) {
+      this._deepgram = createClient(environment.DEEPGRAM_API_KEY);
+
+      // Buffer incoming transcripts for 2s and combine them
+      this.rawStreamSubject.pipe(
+        bufferTime(2000),
+        filter(fragments => fragments.length > 0),
+        takeUntil(this.ngUnsubscribe)
+      ).subscribe(fragments => {
+        const combinedTranscript = fragments
+          .map(f => f.transcript)
+          .join(' ')
+          .trim();
+
+        this.streamSubject.next({
+          transcript: combinedTranscript,
+          source: this.source
+        });
+      });
+    }
+    
     this.sampleRate = sampleRate;
     this.source = source;
 
     this.stream$.pipe(takeUntil(this.ngUnsubscribe)).subscribe();
-
-    // Buffer incoming transcripts for 2s and combine them
-    this.rawStreamSubject.pipe(
-      bufferTime(2000),
-      filter(fragments => fragments.length > 0),
-      takeUntil(this.ngUnsubscribe)
-    ).subscribe(fragments => {
-      const combinedTranscript = fragments
-        .map(f => f.transcript)
-        .join(' ')
-        .trim();
-
-      this.streamSubject.next({
-        transcript: combinedTranscript,
-        source: this.source
-      });
-    });
   }
 
   ngOnDestroy(): void {
@@ -67,7 +73,11 @@ export class TranscribeService implements OnDestroy {
   }
 
   start(): Promise<null> { 
-    this.socket = null;
+    debugger;
+    if (!this.isDeepgramAvailable()) {
+      return Promise.reject("Deepgram not available");
+    }
+    this.socket = undefined;
 
     this.interval = setInterval(() => {
       console.log("Keep-alive ping to Deepgram");
@@ -75,7 +85,7 @@ export class TranscribeService implements OnDestroy {
     }, KEEP_ALIVE_INTERVAL);
 
     return new Promise((resolve, reject) => {
-      this.socket = this._deepgram.listen.live({
+      this.socket = this._deepgram?.listen.live({
         model: 'nova-3',
         language: 'en-US',
         encoding: 'linear16',
@@ -85,7 +95,7 @@ export class TranscribeService implements OnDestroy {
       });
       console.info('Deepgram live socket initialized');
 
-      this.socket.on(LiveTranscriptionEvents.Open, () => {
+      this.socket?.on(LiveTranscriptionEvents.Open, () => {
         console.log("Connected to Deepgram");
 
         this.socket?.on(LiveTranscriptionEvents.Transcript, (data) => {
@@ -115,6 +125,10 @@ export class TranscribeService implements OnDestroy {
   }
 
   stop(): void {
+    if (!this.isDeepgramAvailable()) {
+      return;
+    }
+
     if (this.socket?.isConnected()) {
       this.streamSubject.next(null);
       this.isStreamingSubject.next(false);
@@ -128,7 +142,9 @@ export class TranscribeService implements OnDestroy {
   }
 
   sendAudioData(data: ArrayBuffer): void {
-    //if (!this.socket?.isConnected()) return;
+    if (!this.isDeepgramAvailable()) {
+      return;
+    }
     this.socket?.send(data);
   }
 }

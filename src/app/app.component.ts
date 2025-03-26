@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MultimodalLiveService } from '../gemini/gemini-client.service';
 import { Subscription } from 'rxjs';
-import { Part, Type, LiveConnectConfig, Modality, FunctionResponse } from '@google/genai';
+import { Part, FunctionResponse } from '@google/genai';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModelTurn, ToolCall, ToolCallCancellation, TranscriptionFragment, TurnComplete } from '../gemini/types';
+import { ModelTurn, ToolCall, TranscriptionFragment, TurnComplete } from '../gemini/types';
 import { ControlTrayComponent } from './control-tray/control-tray.component';
 import { SidePanelComponent } from "./side-panel/side-panel.component";
 import { Renderer2 } from '@angular/core';
@@ -119,27 +119,31 @@ export class AppComponent implements OnInit, OnDestroy {
       },
     );
 
-    this.microphoneTranscriptionSubscription = this.multimodalLiveService.microphoneTranscribeService.stream$.subscribe(
-      (fragment: TranscriptionFragment | null) => {
-        if (!fragment) return;
-        console.log('Transcription fragment received:', fragment);
-        this.messages.push({
-          role: fragment.source,
-          text: fragment.transcript
-        });
-      },
-    );
+    if (this.multimodalLiveService.microphoneTranscribeService) {
+      this.microphoneTranscriptionSubscription = this.multimodalLiveService.microphoneTranscribeService?.stream$.subscribe(
+        (fragment: TranscriptionFragment | null) => {
+          if (!fragment) return;
+          console.log('Transcription fragment received:', fragment);
+          this.messages.push({
+            role: fragment.source,
+            text: fragment.transcript
+          });
+        },
+      );
+    }
 
-    this.geminiTranscriptionSubscription = this.multimodalLiveService.geminiTranscribeService.stream$.subscribe(
-      (fragment: TranscriptionFragment | null) => {
-        if (!fragment) return;
-        console.log('Transcription fragment received:', fragment);
-        this.messages.push({
-          role: fragment.source,
-          text: fragment.transcript
-        });
-      },
-    );
+    if (this.multimodalLiveService.geminiTranscribeService) {
+      this.geminiTranscriptionSubscription = this.multimodalLiveService.geminiTranscribeService?.stream$.subscribe(
+        (fragment: TranscriptionFragment | null) => {
+          if (!fragment) return;
+          console.log('Transcription fragment received:', fragment);
+          this.messages.push({
+            role: fragment.source,
+            text: fragment.transcript
+          });
+        },
+      );
+    }
   }
 
   ngOnDestroy(): void {

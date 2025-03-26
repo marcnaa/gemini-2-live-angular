@@ -8,7 +8,7 @@ This project demonstrates integration with Google's Gemini AI models through the
 > This project started as a migration to Angular of the [Multimodal Live API - Web console](https://github.com/google-gemini/multimodal-live-api-web-console) as is only available in React at the moment.
 
 ## Core Features
-- Official TypeScript SDK for Gemini 2.0 API
+- Official TypeScript GenAI SDK for Gemini 2.0 API
 - Real-time streaming voice from and to Gemini 2.0 API
 - Real-time streaming video from webcam or screen to Gemini 2.0 API
 - Natural language text generation
@@ -16,6 +16,7 @@ This project demonstrates integration with Google's Gemini AI models through the
 - Google Search integration for current information
 - Secure Python code execution in sandbox
 - Automated function calling for API integration
+- Live transcription for streamed audio (user and model) via Deepgram API (optional)
 
 ## What's Gemini 2.0 Live?
 
@@ -47,6 +48,9 @@ Project Astra is a research initiative aimed at developing a universal AI assist
 - Node.js and npm (latest stable version)
 - Angular CLI (globally installed via `npm install -g @angular/cli`)
 - Google AI API key from [Google AI Studio](https://makersuite.google.com/)
+- Deepgram API key from [Deepgram](https://deepgram.com/) (optional)
+
+> Note that currently Gemini 2.0 (audio modality) doesn't send any transcript which may confuse you. We are using Deepgram to transcribe both the user's audio and the model's audio. To enable it just create an Api Key and add it to the development environment.
 
 ### Installation Steps
 
@@ -58,6 +62,7 @@ Project Astra is a research initiative aimed at developing a universal AI assist
    ```typescript
    export const environment = {
      API_KEY: 'YOUR_GOOGLE_AI_API_KEY',
+     DEEPGRAM_API_KEY: 'YOUR_DEEPGRAM_API_KEY', // optional
    };
    ```
 
@@ -144,6 +149,7 @@ Access the application at `http://localhost:4200/`
 
 ## Project Information
 - Built with Angular CLI version 19.2.3
+- TypeScript GenAI SDK version 0.6.1
 - Features automatic reload during development
 - Includes production build optimizations
 

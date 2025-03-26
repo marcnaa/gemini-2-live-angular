@@ -65,11 +65,11 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   private volumeSubject = new BehaviorSubject<number>(0);
   volume$ = this.volumeSubject.asObservable();
   private destroy$ = new Subject<void>(); // For unsubscribing
-  public microphoneTranscribeService: TranscribeService;
-  public geminiTranscribeService: TranscribeService;
+  public microphoneTranscribeService: TranscribeService | undefined = undefined;
+  public geminiTranscribeService: TranscribeService | undefined = undefined;
   private microphoneTranscriptionSubscription: Subscription | undefined;
   private geminiTranscriptionSubscription: Subscription | undefined;
-
+  private isDeepgramAvailable = () => !!environment.DEEPGRAM_API_KEY;
 
   // function calling setup
   // Define the function to be called.
@@ -127,22 +127,24 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
       apiKey: environment.API_KEY,
       apiVersion: 'v1alpha',
     });
-    this.microphoneTranscribeService = new TranscribeService(16000, 'user');
-    this.geminiTranscribeService = new TranscribeService(24000, 'model');
-    this.initializeTranscriptionLogs();
+    if (this.isDeepgramAvailable()) {
+      this.microphoneTranscribeService = new TranscribeService(16000, 'user');
+      this.geminiTranscribeService = new TranscribeService(24000, 'model');
+      this.initializeTranscriptionLogs();
+    }
     this.initializeAudioStreamer();
     this.setupEventListeners();
   }
 
   initializeTranscriptionLogs() {
-    this.microphoneTranscriptionSubscription = this.microphoneTranscribeService.stream$.subscribe(
+    this.microphoneTranscriptionSubscription = this.microphoneTranscribeService?.stream$.subscribe(
       (fragment: TranscriptionFragment | null) => {
         if (!fragment) return;
         this.log('user-transcript', fragment.transcript);
       },
     );
 
-    this.geminiTranscriptionSubscription = this.geminiTranscribeService.stream$.subscribe(
+    this.geminiTranscriptionSubscription = this.geminiTranscribeService?.stream$.subscribe(
       (fragment: TranscriptionFragment | null) => {
         if (!fragment) return;
         this.log('model-transcript', fragment.transcript);
@@ -187,7 +189,9 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
     this.on('open', () => {
       console.log('Gemini API: connection opened');
       this.setConnected(true);
-      this.geminiTranscribeService.start();
+      if (this.isDeepgramAvailable()) {
+        this.geminiTranscribeService?.start();
+      }
     })
 
       .on('content', (data: ServerContent) => {
@@ -217,7 +221,9 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   async connect(): Promise<boolean> {
     this._session?.close(); // Close any existing session
     this._session = null;
-    this.geminiTranscribeService.stop();
+    if (this.isDeepgramAvailable()) {
+      this.geminiTranscribeService?.stop();
+    }
 
     return new Promise(async (resolve, reject) => {
       this._session = await this._ai.live.connect({
@@ -239,7 +245,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
           },
           onclose: (ev: CloseEvent) => {
             this.disconnect();
-            this.log(`server.${ev.type}`, ev.reason? `disconnected with reason: ${ev.reason}`:"disconnected");
+            this.log(`server.${ev.type}`, ev.reason ? `disconnected with reason: ${ev.reason}` : "disconnected");
             this.emit("close", ev);
           },
         },
@@ -254,8 +260,10 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
     this._session?.close();
     this._session = null;
     this.stopAudioStreamer(); // Stop audio on disconnect
-    this.microphoneTranscribeService.stop();
-    this.geminiTranscribeService.stop();
+    if (this.isDeepgramAvailable()) {
+      this.microphoneTranscribeService?.stop();
+      this.geminiTranscribeService?.stop();
+    }
     this.setConnected(false);
   }
 
@@ -383,7 +391,9 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   private addAudioData(data: ArrayBuffer): void {
     if (this.audioStreamer) {
       this.audioStreamer.addPCM16(new Uint8Array(data));
-      this.geminiTranscribeService.sendAudioData(new Uint8Array(data));
+      if (this.isDeepgramAvailable()) {
+        this.geminiTranscribeService?.sendAudioData(new Uint8Array(data));
+      }
     }
   }
 
