@@ -1,79 +1,10 @@
-<p>Connection Status: {{ isConnected ? 'Connected' : 'Disconnected' }}</p>
-<button (click)="connect()" [disabled]="isConnected">Connect</button>
-<button (click)="disconnect()" [disabled]="!isConnected">Disconnect</button>
-<p>Conversation</p>
-<div class="chat-container">
-  <div class="message-list">
-    @for (message of messages; track $index) {
-      <div class="message" [ngClass]="message.role">
-        @if (message.role=="user") {
-          <div class="text">User: {{ message.text }}</div>
-        }
-        @if (message.role=="model") {
-        <div class="text">Gemini: {{ message.text }}</div>
-        }  
-      </div>
-    }
-  </div>
-  <form [formGroup]="chatForm" (ngSubmit)="send()">
-    <div class="input-area">
-      <input #input [disabled]="!isConnected" placeholder="Type your message here" formControlName="message">
-      <button type="button" (click)="reset()" [disabled]="input.value.length==0">X</button>
-      <button type="submit" [disabled]="!isConnected || input.value.length==0">Send</button>
+<div class="streaming-console">
+  <app-side-panel></app-side-panel>
+  <main>
+    <div class="main-app-area">
+      <video #myVideo autoplay muted class="video"></video>
     </div>
-  </form>
+    <app-control-tray [videoRef]="myVideo" [supportsVideo]="true" (onVideoStreamChange)="handleVideoStreamChange($event)">
+    </app-control-tray>
+  </main>
 </div>
-<app-control-tray 
-  [videoRef]="myVideo" 
-  [supportsVideo]="true" 
-  (onVideoStreamChange)="handleVideoStreamChange($event)">
-</app-control-tray>
-<video #myVideo width="260" height="120" autoplay muted></video>
-
-
-<style>
-  .chat-container {
-    height: 300px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .message-list {
-    flex-grow: 1;
-    overflow-y: scroll;
-    padding-bottom: 10px;
-  }
-
-  .message {
-    padding: 5px;
-    margin-bottom: 5px;
-    border-radius: 5px;
-    background-color: #f0f0f0;
-  }
-
-  .input-area {
-    display: flex;
-    position: sticky;
-    padding-top: 10px;
-  }
-
-  .input-area input {
-    flex-grow: 1;
-    padding: 5px;
-  }
-
-  .input-area button {
-    padding: 5px 10px;
-  }
-
-  .message.user {
-    background-color: #eeeeee;
-    color: #000;
-  }
-  .message.model {
-    background-color: #cfd8dc;
-    color: #000;
-  }
-</style>

@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, Subscription } from 'rxjs';
 import {
   GoogleGenAI,
   Type,
@@ -30,7 +30,8 @@ import {
   LiveIncomingMessage,
   ModelTurn, MultimodalLiveClientEventTypes, RealtimeInputMessage,
   ServerContent, ServerContentNullable, SetupMessage,
-  StreamingLog, ToolCallNullable, ToolResponseMessage
+  StreamingLog, ToolCallNullable, ToolResponseMessage,
+  TranscriptionFragment
 } from './types';
 import { environment } from '../../src/environments/environment.development';
 
@@ -39,6 +40,7 @@ import VolMeterWorket from './worklet.vol-meter';
 import { audioContext, blobToJSON, base64ToArrayBuffer } from './utils';
 import { Modality } from '@google/genai';
 import { TranscribeService } from './transcribe.service';
+import { LoggerService } from '../app/logging/logger.service';
 
 /**
  * A event-emitting class that manages the connection to the websocket and emits
@@ -65,6 +67,9 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   private destroy$ = new Subject<void>(); // For unsubscribing
   public microphoneTranscribeService: TranscribeService;
   public geminiTranscribeService: TranscribeService;
+  private microphoneTranscriptionSubscription: Subscription | undefined;
+  private geminiTranscriptionSubscription: Subscription | undefined;
+
 
   // function calling setup
   // Define the function to be called.
@@ -114,7 +119,9 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
     ],
   };
 
-  constructor() {
+  constructor(
+    private loggerService: LoggerService
+  ) {
     super();
     this._ai = new GoogleGenAI({
       apiKey: environment.API_KEY,
@@ -122,8 +129,25 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
     });
     this.microphoneTranscribeService = new TranscribeService(16000, 'user');
     this.geminiTranscribeService = new TranscribeService(24000, 'model');
+    this.initializeTranscriptionLogs();
     this.initializeAudioStreamer();
     this.setupEventListeners();
+  }
+
+  initializeTranscriptionLogs() {
+    this.microphoneTranscriptionSubscription = this.microphoneTranscribeService.stream$.subscribe(
+      (fragment: TranscriptionFragment | null) => {
+        if (!fragment) return;
+        this.log('user-transcript', fragment.transcript);
+      },
+    );
+
+    this.geminiTranscriptionSubscription = this.geminiTranscribeService.stream$.subscribe(
+      (fragment: TranscriptionFragment | null) => {
+        if (!fragment) return;
+        this.log('model-transcript', fragment.transcript);
+      },
+    );
   }
 
   log(type: string, message: StreamingLog["message"]) {
@@ -133,6 +157,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
       message,
     };
     this.emit("log", log);
+    this.loggerService.log(log);
   }
 
   ngOnDestroy(): void {
@@ -165,9 +190,6 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
       this.geminiTranscribeService.start();
     })
 
-      .on('log', (log: StreamingLog) => {
-        console.log(log);
-      })
       .on('content', (data: ServerContent) => {
         this.contentSubject.next(data);
         console.log(data);
@@ -181,6 +203,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
         console.log('Gemini API: connection closed', e);
         this.setConnected(false);
         this.disconnect();
+        this.log("client.close", "disconnected");
       })
       // audio event listeners
       .on('interrupted', () => {
@@ -201,7 +224,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
         model: "gemini-2.0-flash-exp",
         callbacks: {
           onopen: () => {
-            this.log(`client.connect`, `connected`);
+            this.log("client.connect", "connected");
             this.emit("open");
             resolve(true);
           },
@@ -216,9 +239,8 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
           },
           onclose: (ev: CloseEvent) => {
             this.disconnect();
-            this.log(`server.${ev.type}`, `disconnected with reason: ${ev.reason}`);
+            this.log(`server.${ev.type}`, ev.reason? `disconnected with reason: ${ev.reason}`:"disconnected");
             this.emit("close", ev);
-            console.log(ev);
           },
         },
         config: {
@@ -231,7 +253,6 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   disconnect() {
     this._session?.close();
     this._session = null;
-    this.log("client.close", `Disconnected`);
     this.stopAudioStreamer(); // Stop audio on disconnect
     this.microphoneTranscribeService.stop();
     this.geminiTranscribeService.stop();
@@ -288,7 +309,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
           if (b64) {
             const data = base64ToArrayBuffer(b64);
             this.emit("audio", data);
-            this.log(`server.audio`, `buffer (${data.byteLength})`);
+            this.log("server.audio", `buffer (${data.byteLength})`);
           }
         });
         if (!otherParts.length) {
@@ -299,7 +320,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
 
         const content: ModelTurn = { modelTurn: { parts } };
         this.emit("content", content);
-        this.log(`server.content`, response);
+        this.log("server.content", response);
       }
     } else {
       console.log("received unmatched message", response);
@@ -326,7 +347,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
       this._session?.sendRealtimeInput({ media: chunk });
     }
     const message = hasAudio && hasVideo ? "audio + video" : (hasAudio ? "audio" : hasVideo ? "video" : "unknown");
-    this.log(`client.realtimeInput`, message);
+    this.log("client.realtimeInput", message);
   }
 
   /**
@@ -334,7 +355,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
    */
   sendToolResponse(toolResponse: ToolResponseMessage["toolResponse"]) {
     const message: ToolResponseMessage = { toolResponse };
-    this.log(`client.toolResponse`, message);
+    this.log("client.toolResponse", message);
 
     this._session?.sendToolResponse(toolResponse as LiveSendToolResponseParameters);
   }
@@ -351,7 +372,7 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
         turnComplete,
       },
     };
-    this.log(`client.send`, clientContentRequest);
+    this.log("client.send", clientContentRequest);
     this._session?.sendClientContent(clientContentRequest.clientContent as LiveSendClientContentParameters);
   }
 

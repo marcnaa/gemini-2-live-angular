@@ -4,24 +4,21 @@ import { Subscription } from 'rxjs';
 import { Part, Type, LiveConnectConfig, Modality, FunctionResponse } from '@google/genai';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
+import { ModelTurn, ToolCall, ToolCallCancellation, TranscriptionFragment, TurnComplete } from '../gemini/types';
 import { ControlTrayComponent } from './control-tray/control-tray.component';
+import { SidePanelComponent } from "./side-panel/side-panel.component";
+import { Renderer2 } from '@angular/core';
 
 type ChatMessage = {
   role: string;
   text: string;
 }
 
-interface TranscriptionFragment {
-  transcript: string;
-  source: string; // user or model
-}
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, ControlTrayComponent],
+  imports: [CommonModule, ReactiveFormsModule, ControlTrayComponent, SidePanelComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('myVideo') myVideoRef!: ElementRef<HTMLVideoElement>;
@@ -34,7 +31,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private connectedSubscription: Subscription | undefined;
   private contentSubscription: Subscription | undefined;
   private toolSubscription: Subscription | undefined;
-  private transcriptionSubscription: Subscription | undefined;
+  private microphoneTranscriptionSubscription: Subscription | undefined;
+  private geminiTranscriptionSubscription: Subscription | undefined;
 
   chatForm = new FormGroup({
     message: new FormControl('Write a poem.'),
@@ -42,7 +40,10 @@ export class AppComponent implements OnInit, OnDestroy {
   isFormEmpty: boolean = this.chatForm.value?.message?.length === 0;
 
 
-  constructor(private multimodalLiveService: MultimodalLiveService) { }
+  constructor(
+    private multimodalLiveService: MultimodalLiveService,
+    private renderer: Renderer2,
+  ) { }
 
   ngOnInit(): void {
     this.connectedSubscription = this.multimodalLiveService.connected$.subscribe(
@@ -118,7 +119,7 @@ export class AppComponent implements OnInit, OnDestroy {
       },
     );
 
-    this.transcriptionSubscription = this.multimodalLiveService.microphoneTranscribeService.stream$.subscribe(
+    this.microphoneTranscriptionSubscription = this.multimodalLiveService.microphoneTranscribeService.stream$.subscribe(
       (fragment: TranscriptionFragment | null) => {
         if (!fragment) return;
         console.log('Transcription fragment received:', fragment);
@@ -129,7 +130,7 @@ export class AppComponent implements OnInit, OnDestroy {
       },
     );
 
-    this.transcriptionSubscription = this.multimodalLiveService.geminiTranscribeService.stream$.subscribe(
+    this.geminiTranscriptionSubscription = this.multimodalLiveService.geminiTranscribeService.stream$.subscribe(
       (fragment: TranscriptionFragment | null) => {
         if (!fragment) return;
         console.log('Transcription fragment received:', fragment);
@@ -181,6 +182,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Handle the video stream change here (e.g., update the video element)
     if(this.myVideoRef){
       this.myVideoRef.nativeElement.srcObject = stream;
+      this.renderer.setStyle(this.myVideoRef.nativeElement, "visibility", "visible");
     }
   }
 }

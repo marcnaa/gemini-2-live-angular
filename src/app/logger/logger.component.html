@@ -1,0 +1,138 @@
+<div class="logger">
+  <ul class="logger-list">
+    @for (log of filteredLogs$ | async; track $index) {
+      <li [ngClass]="getLogClasses(log)">
+        <span class="timestamp">{{ formatTime(log.date) }}</span>
+        <span class="source">{{ log.type }}</span>
+        <span class="message">
+          <ng-container *ngTemplateOutlet="logTemplate(log); context: { 
+            text: text, 
+            $implicit: log 
+          }">
+          </ng-container>
+        </span>
+        @if (log.count) {
+          <span class="count">{{ log.count }}</span>
+        }
+      </li>
+    }
+  </ul>
+</div>
+
+<ng-template #plainText let-text="text">
+  <span>{{ text }}</span>
+</ng-template>
+
+<ng-template #plainTextMessage let-log>
+  <span>{{ log.message }}</span>
+</ng-template>
+
+<ng-template #anyMessage let-log>
+  <pre>{{ log.message | json }}</pre>
+</ng-template>
+
+<ng-template #clientTranscriptLog let-log>
+  <div class="rich-log client-content user">
+    <h4 class="role-user">User (transcript)</h4>
+    <div><span>{{ log.message }}</span></div>
+  </div>
+</ng-template>
+
+<ng-template #modelTranscriptLog let-log>
+  <div class="rich-log model-turn model">
+    <h4 class="role-model">Model (transcript)</h4>
+    <div><span>{{ log.message }}</span></div>
+  </div>
+</ng-template>
+
+<ng-template #clientContentLog let-log>
+  <div class="rich-log client-content user">
+    <h4 class="role-user">User</h4>
+    @for (turn of log?.message?.clientContent?.turns; track $index) {
+      <div>
+        @for (part of filterParts(turn?.parts); track $index) {
+          <ng-container *ngTemplateOutlet="renderPart; context: { $implicit: part }">
+          </ng-container>
+        }
+      </div>
+    }
+    @if (!log.message?.clientContent?.turnComplete) {
+      <span>turnComplete: false</span>
+    }
+  </div>
+</ng-template>
+
+<ng-template #toolCallLog let-log>
+  <div class="rich-log tool-call">
+    @for (fc of log.message?.toolCall?.functionCalls; track $index) {
+      <div class="part part-functioncall">
+        <h5>Function call: {{ fc?.name }}</h5>
+        <pre><code>{{ fc | json }}</code></pre>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #toolCancellationLog let-log>
+  <div class="rich-log tool-call-cancellation">
+    <span>
+      ids:
+      @for (id of log.message?.toolCallCancellation?.ids; track $index) {
+        <span class="inline-code">
+          "{{ id }}"
+        </span>
+      }
+    </span>
+  </div>
+</ng-template>
+
+<ng-template #toolResponseLog let-log>
+  <div class="rich-log tool-response">
+    @if (log.message?.toolResponse?.functionResponses?.id) {
+      <div class="part">
+        <h5>Function Response: {{ log.message?.toolResponse?.functionResponses?.id }}</h5>
+        <pre><code>{{ log.message?.toolResponse?.functionResponses?.response | json }}</code></pre>
+      </div>
+    }
+    @else {
+      @for (fc of log.message?.toolResponse?.functionResponses; track $index) {
+        <div class="part">
+          <h5>Function Response: {{ fc.id }}</h5>
+          <pre><code>{{ fc.response | json }}</code></pre>
+        </div>
+      }
+    }
+  </div>
+</ng-template>
+
+<ng-template #modelTurnLog let-log>
+  <div class="rich-log model-turn model">
+    <h4 class="role-model">Model</h4>
+    @for (part of filterParts(log.message?.serverContent?.modelTurn?.parts); track $index) {
+      <ng-container *ngTemplateOutlet="renderPart; context: { $implicit: part }">
+      </ng-container>
+    }
+  </div>
+</ng-template>
+
+<ng-template #renderPart let-part>
+  @if (part.text) {
+    <p class="part part-text">{{ part.text }}</p>
+  }
+
+  <div *ngIf="part.executableCode" class="part part-executableCode">
+    <h5>executableCode: {{ part?.executableCode?.language }}</h5>
+    <pre><code>{{ part?.executableCode?.code | json }}</code></pre>
+  </div>
+  
+  <div *ngIf="part.codeExecutionResult" class="part part-codeExecutionResult">
+    <h5>codeExecutionResult: {{ part?.codeExecutionResult?.outcome }}</h5>
+    <pre><code>{{ part?.codeExecutionResult?.output | json }}</code></pre>
+  </div>
+  
+  @if (part?.inlineData) {
+    <div class="part part-inlinedata">
+      <h5>Inline Data: {{ part?.inlineData?.mimeType }}</h5>
+    </div>
+  }
+</ng-template>

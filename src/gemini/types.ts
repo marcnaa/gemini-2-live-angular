@@ -258,3 +258,15 @@ export interface MultimodalLiveClientEventTypes {
   toolcall: (toolCall: ToolCall) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
 }
+export interface TranscriptionFragment {
+  transcript: string;
+  source: string; // user or model
+}
+
+
+export function isTranscript(log: StreamingLog): boolean {
+  if (log.type == "user-transcript" || log.type == "model-transcript") {
+    return true;
+  }
+  return false;
+}

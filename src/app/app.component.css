@@ -1,4 +1,88 @@
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: "Google Sans", sans-serif;
   font-size: 16px;
+}
+
+.chat-container {
+  height: 300px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-list {
+  flex-grow: 1;
+  overflow-y: scroll;
+  padding-bottom: 10px;
+}
+
+.message {
+  padding: 5px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+}
+
+.input-area {
+  display: flex;
+  position: sticky;
+  padding-top: 10px;
+}
+
+.input-area input {
+  flex-grow: 1;
+  padding: 5px;
+}
+
+.input-area button {
+  padding: 5px 10px;
+}
+
+.message.user {
+  background-color: #eeeeee;
+  color: #000;
+}
+
+.message.model {
+  background-color: #cfd8dc;
+  color: #000;
+}
+
+.streaming-console {
+  background: var(--Neutral-5);
+  color: var(--gray-300);
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.streaming-console main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  gap: 1rem;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.video {
+  visibility: hidden;
+  flex-grow: 1;
+  max-width: 90%;
+  border-radius: 32px;
+  max-height: fit-content;
+}
+
+.main-app-area {
+  display: flex;
+  flex: 1 1;
+  align-items: center;
+  justify-content: center;
 }
