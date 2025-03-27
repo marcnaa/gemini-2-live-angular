@@ -86,3 +86,17 @@ textarea {
   align-items: center;
   justify-content: center;
 }
+
+.info-area {
+  padding: 15px;
+  background: black;
+  border: 1px gray;
+  border-radius: 10px 10px 10px 10px !important;
+  margin: 15px;
+  font-size: 0.4em;
+  max-width: 200px;
+  right: 15px;
+  top: 15px;
+  position: absolute;
+  transition: all 0.2s ease-in-out;
+}

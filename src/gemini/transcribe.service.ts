@@ -73,7 +73,6 @@ export class TranscribeService implements OnDestroy {
   }
 
   start(): Promise<null> { 
-    debugger;
     if (!this.isDeepgramAvailable()) {
       return Promise.reject("Deepgram not available");
     }

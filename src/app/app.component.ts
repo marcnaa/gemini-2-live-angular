@@ -22,6 +22,8 @@ type ChatMessage = {
 })
 export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('myVideo') myVideoRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('infoBox') infoBox!: ElementRef<HTMLDivElement>;
+
 
   title = 'gemini-2-live-angular';
   isConnected: boolean = false;
@@ -144,6 +146,10 @@ export class AppComponent implements OnInit, OnDestroy {
         },
       );
     }
+
+    setTimeout(() => {
+      this.renderer.setStyle(this.infoBox.nativeElement, "opacity", "0");
+    }, 10000 );
   }
 
   ngOnDestroy(): void {

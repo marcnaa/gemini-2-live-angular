@@ -1,6 +1,11 @@
 <div class="streaming-console">
   <app-side-panel></app-side-panel>
   <main>
+    <div class="main">
+      <div #infoBox class="info-area">
+        Click on the "Play" button to start your conversation with Gemini. You can enable the microphone when ready. During testing and in noisy environments I suggest to use the text modality not to run out of your daily rate. Sessions are limited to a few minutes depending on audio and images streamed.
+      </div>
+    </div>
     <div class="main-app-area">
       <video #myVideo autoplay muted class="video"></video>
     </div>

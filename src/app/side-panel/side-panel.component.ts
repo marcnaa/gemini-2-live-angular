@@ -35,7 +35,7 @@ export class SidePanelComponent implements OnInit, OnDestroy {
   @ViewChild('inputArea') inputArea!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('loggerContainer') loggerContainer!: ElementRef<HTMLDivElement>;
 
-  open = true;
+  open = false;
   connected = false;
   textInput = '';
 

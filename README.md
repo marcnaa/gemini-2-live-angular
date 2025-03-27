@@ -1,7 +1,7 @@
 # Gemini 2.0 Live API Demo
 
 ## Overview
-This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular.
+This project showcases Gemini 2.0 real-time multimodal AI capabilities in a web application using Angular. Currently the Live API is only available for `Gemini 2.0 Flash Experimental`.
 
 This project demonstrates integration with Google's Gemini AI models through the `@google/genai` library now in (Technical) [Preview](https://github.com/googleapis/js-genai/commit/da38b6df88705c8ff1ea9a2e1c5ffa596054b382).
 
@@ -51,7 +51,7 @@ Project Astra is a research initiative aimed at developing a universal AI assist
 - Google AI API key from [Google AI Studio](https://makersuite.google.com/)
 - Deepgram API key from [Deepgram](https://deepgram.com/) (optional)
 
-> Note that currently Gemini 2.0 (audio modality) doesn't send any transcript which may confuse you. We are using Deepgram to transcribe both the user's audio and the model's audio. To enable it just create an Api Key and add it to the development environment.
+> Note that currently `Gemini 2.0 Flash Experimental` (audio modality) doesn't send any transcript which may confuse you. We are using Deepgram to transcribe both the user's audio and the model's audio. To enable it just create an Api Key and add it to the development environment.
 
 ### Installation Steps
 
