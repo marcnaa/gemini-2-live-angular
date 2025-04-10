@@ -14,6 +14,7 @@ import {
   createPartFromText,
   createUserContent,
   PartListUnion,
+  MediaResolution,
 } from '@google/genai';
 
 import { EventEmitter } from "eventemitter3";
@@ -97,11 +98,18 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
   public config: LiveConnectConfig = {
     // responseModalities: [Modality.TEXT],
     responseModalities: [Modality.AUDIO], // note "audio" doesn't send a text response over
-    // speechConfig: {
-    //   voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
-    // },
+    speechConfig: {
+      voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } }, // Puck, Charon, Kore, Fenrir, Aoede. *New* 3 voices: Leda, Orus, and Zephyr.
+    },
     generationConfig: {
       //maxOutputTokens: 100,
+      //mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM, // API only supports "low" and "medium" for now
+    },
+    contextWindowCompression: {
+      triggerTokens: '1000',
+      slidingWindow: {
+        targetTokens: '10',
+      },
     },
     systemInstruction: {
       parts: [
@@ -125,7 +133,6 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
     super();
     this._ai = new GoogleGenAI({
       apiKey: environment.API_KEY,
-      apiVersion: 'v1alpha',
     });
     if (this.isDeepgramAvailable()) {
       this.microphoneTranscribeService = new TranscribeService(16000, 'user');
@@ -227,7 +234,8 @@ export class MultimodalLiveService extends EventEmitter<MultimodalLiveClientEven
 
     return new Promise(async (resolve, reject) => {
       this._session = await this._ai.live.connect({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.0-flash-live-001", 
+        // Note: "gemini-2.0-flash-live-latest" and "gemini-2.0-flash-live" don't work at the moment
         callbacks: {
           onopen: () => {
             this.log("client.connect", "connected");
