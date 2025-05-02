@@ -122,12 +122,12 @@
 
   <div *ngIf="part.executableCode" class="part part-executableCode">
     <h5>executableCode: {{ part?.executableCode?.language }}</h5>
-    <pre><code>{{ part?.executableCode?.code | json }}</code></pre>
+    <pre><code>{{ part?.executableCode?.code | unescape }}</code></pre>
   </div>
   
   <div *ngIf="part.codeExecutionResult" class="part part-codeExecutionResult">
     <h5>codeExecutionResult: {{ part?.codeExecutionResult?.outcome }}</h5>
-    <pre><code>{{ part?.codeExecutionResult?.output | json }}</code></pre>
+    <pre><code>{{ part?.codeExecutionResult?.output | unescape }}</code></pre>
   </div>
   
   @if (part?.inlineData) {

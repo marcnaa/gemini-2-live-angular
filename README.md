@@ -163,7 +163,7 @@ Access the application at `http://localhost:4200/`
 ## Project Information
 - Built with Angular CLI version 19.2.3
 - Logging state management including Dev Tools with NgRx version 19.0.1
-- TypeScript GenAI SDK version 0.8.0
+- TypeScript GenAI SDK version 0.12.0
 - Features automatic reload during development
 - Includes production build optimizations
 

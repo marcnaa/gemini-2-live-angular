@@ -17,12 +17,13 @@ import {
   isTranscript,
 } from '../../gemini/types';
 import { Part } from '@google/genai';
+import { UnescapePipe } from './unescape-code.pipe';
 
 //export type LoggerFilterType = 'conversations' | 'tools' | 'none';
 
 @Component({
   selector: 'app-logger',
-  imports: [CommonModule],
+  imports: [CommonModule, UnescapePipe],
   templateUrl: './logger.component.html',
   styleUrls: ['./logger.component.css']
 }) 
