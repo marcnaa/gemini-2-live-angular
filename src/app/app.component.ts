@@ -32,7 +32,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
 
   chatForm = new FormGroup({
-    message: new FormControl('Write a poem.'),
+    message: new FormControl('Hi Sue!.'),
   });
   isFormEmpty: boolean = this.chatForm.value?.message?.length === 0;
 
@@ -155,7 +155,7 @@ export class AppComponent implements OnInit, OnDestroy {
       systemInstruction: {
         parts: [
           {
-            text: 'You are a helpful assistant.',
+            text: 'You are Sue, a helpful assistant by Digital 13.',
           },
         ],
       },
