@@ -5,7 +5,7 @@ import {
   MultimodalLiveClient,
 } from './ws-client';
 import { Interrupted, LiveConfig, ModelTurn, ServerContent, StreamingLog, ToolCall, ToolCallCancellation, TurnComplete } from './types';
-import { environment } from '../environments/environment.development';
+import { environment } from '../environments/environment';
 
 import { AudioStreamer } from './audio-streamer'; 
 import VolMeterWorket from './worklet.vol-meter'; 
