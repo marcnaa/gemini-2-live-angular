@@ -27,6 +27,7 @@ interface UseMediaStreamResult {
 
 @Component({
   selector: 'app-control-tray',
+  standalone: true,
   imports: [CommonModule, AudioPulseComponent],
   templateUrl: './control-tray.component.html',
   styleUrls: ['./control-tray.component.css'],

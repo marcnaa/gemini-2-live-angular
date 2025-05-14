@@ -1,11 +1,12 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { MultimodalLiveService } from '../gemini/gemini-client.service';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { Part, SchemaType } from '@google/generative-ai';
-import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { LiveConfig, ModelTurn, ToolCall, ToolCallCancellation, TurnComplete } from '../gemini/types';
+import { FormControl, FormGroup } from '@angular/forms';
+import { LiveConfig, ModelTurn, ToolCall, TurnComplete } from '../gemini/types';
 import { ControlTrayComponent } from './control-tray/control-tray.component';
+import { GeminiApiService } from './services/gemini-api.service';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
 
 type ChatMessage = {
   role: string;
@@ -16,7 +17,9 @@ type ChatMessage = {
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, ControlTrayComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, ControlTrayComponent]
 })
 export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('myVideo') myVideoRef!: ElementRef<HTMLVideoElement>;
@@ -29,24 +32,24 @@ export class AppComponent implements OnInit, OnDestroy {
   private connectedSubscription: Subscription | undefined;
   private contentSubscription: Subscription | undefined;
   private toolSubscription: Subscription | undefined;
-
+  private audioSubscription: Subscription | undefined;
 
   chatForm = new FormGroup({
-    message: new FormControl('Hi Sue!.'),
+    message: new FormControl('Hola Sue!'),
   });
   isFormEmpty: boolean = this.chatForm.value?.message?.length === 0;
 
-
-  constructor(private multimodalLiveService: MultimodalLiveService) { }
+  constructor(private geminiApiService: GeminiApiService) { }
 
   ngOnInit(): void {
-    this.connectedSubscription = this.multimodalLiveService.connected$.subscribe(
+    this.connectedSubscription = this.geminiApiService.connected$.subscribe(
       (connected) => {
         console.log('Connected:', connected);
         this.isConnected = connected;
       },
     );
-    this.contentSubscription = this.multimodalLiveService.content$.subscribe(
+    
+    this.contentSubscription = this.geminiApiService.content$.subscribe(
       (data) => {
         if (!data) return;
         let turn = data as ModelTurn;
@@ -73,7 +76,8 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       },
     );
-    this.toolSubscription = this.multimodalLiveService.tool$.subscribe(
+    
+    this.toolSubscription = this.geminiApiService.tool$.subscribe(
       (data) => {
         // Executable function code.
         interface WeatherParams {
@@ -99,7 +103,7 @@ export class AppComponent implements OnInit, OnDestroy {
           if (call.name === "getCurrentWeather") {
             const callResponse = functions[call.name](call.args as WeatherParams);
             // Send the API response back to the model
-            this.multimodalLiveService.sendToolResponse({
+            this.geminiApiService.sendToolResponse({
               functionResponses: [{
                 response: callResponse,
                 id,
@@ -114,29 +118,37 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.connectedSubscription) {
       this.connectedSubscription.unsubscribe();
-      console.log('Connected:', this.isConnected);
+    }
+    
+    if (this.contentSubscription) {
+      this.contentSubscription.unsubscribe();
+    }
+    
+    if (this.toolSubscription) {
+      this.toolSubscription.unsubscribe();
+    }
+    
+    if (this.audioSubscription) {
+      this.audioSubscription.unsubscribe();
     }
   }
 
   connect(): void {
-    // function calling setup
-    
-    // Define the function to be called.
-    // Following the specificication at https://spec.openapis.org/oas/v3.0.3
+    // Define la función para obtener el clima
     const getCurrentWeatherFunction = {
       name: "getCurrentWeather",
-      description: "Get the current weather in a given location",
+      description: "Obtiene el clima actual en una ubicación determinada",
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
           location: {
             type: SchemaType.STRING,
-            description: "The city and state, e.g. San Francisco, CA",
+            description: "La ciudad y estado, por ejemplo: Barcelona, ES",
           },
           unit: {
             type: SchemaType.STRING,
             enum: ["celsius", "fahrenheit"],
-            description: "The temperature unit to use. Infer this from the users location.",
+            description: "La unidad de temperatura a usar. Inferir de la ubicación del usuario.",
           },
         },
         required: ["location", "unit"],
@@ -146,8 +158,7 @@ export class AppComponent implements OnInit, OnDestroy {
     let config : LiveConfig = {
       model: "models/gemini-2.0-flash-exp",
       generationConfig: {
-        // responseModalities: "text",
-        responseModalities: "audio", // note "audio" doesn't send a text response over
+        responseModalities: "audio",
         speechConfig: {
           voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
         },
@@ -155,7 +166,7 @@ export class AppComponent implements OnInit, OnDestroy {
       systemInstruction: {
         parts: [
           {
-            text: 'You are Sue, a helpful assistant by Digital 13.',
+            text: 'Eres Sue, un asistente útil creado por Digital 13.',
           },
         ],
       },
@@ -170,23 +181,23 @@ export class AppComponent implements OnInit, OnDestroy {
       ],
     };
 
-    this.multimodalLiveService.connect(config).catch(err => {
-      console.error("Failed to connect:", err);
+    this.geminiApiService.connect(config).catch(err => {
+      console.error("Error al conectar:", err);
     });
   }
 
   disconnect(): void {
-    this.multimodalLiveService.disconnect();
+    this.geminiApiService.disconnect();
   }
 
   send(): void {
-    this.streamedMessage = ''; // reset streamed message
+    this.streamedMessage = ''; // reinicia el mensaje en streaming
     let message = (this.chatForm.value?.message as string)?.trim();
     if (!message) return;
     let part: Part | Part[] = {
       text: message,
     };
-    this.multimodalLiveService.send(part);
+    this.geminiApiService.send(part);
     this.messages.push({
       role: 'user',
       text: message
@@ -198,10 +209,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.chatForm.reset();
   }
 
-  handleVideoStreamChange(stream: MediaStream | null) {
-    // Handle the video stream change here (e.g., update the video element)
+  handleVideoStreamChange(event: any) {
+    // Maneja el cambio de stream de video (p.ej., actualiza el elemento de video)
     if(this.myVideoRef){
-      this.myVideoRef.nativeElement.srcObject = stream;
+      this.myVideoRef.nativeElement.srcObject = event;
     }
   }
 }
